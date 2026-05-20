@@ -5,7 +5,8 @@ from typing import AsyncIterator
 from fastmcp import FastMCP
 from sqlalchemy import select
 
-from src.database.core import Job, SessionLocal, init_db
+from src.database.core import SessionLocal, init_db
+from src.database.models.jobs import Job
 
 logger = logging.getLogger(__name__)
 
@@ -24,14 +25,22 @@ mcp = FastMCP(
 )
 
 
-@mcp.tool()
+@mcp.tool(
+    name="save_job_to_db",
+    description=(
+        "Save a job listing to the database. "
+        "Returns a message indicating whether the job was added or already exists. "
+        "Deduplication is performed on the job link."
+    ),
+)
 async def save_job_to_db(
     company_name: str,
     role: str,
     link: str,
     portal: str,
 ) -> str:
-    """Save a job listing to the database.
+    """
+    Save a job listing to the database.
 
     Returns a message indicating whether the job was added or already exists.
     Deduplication is performed on the job link.
