@@ -1,0 +1,44 @@
+services:
+  job-finder-agent:
+    image: job-finder-agent:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: job-finder-agent
+    command: ["python", "src/main.py"]
+    network_mode: host
+    environment:
+      - ENV=prod
+      - APP_PORT=8000
+      - MOUNT_FOLDER=/mnt
+    volumes:
+      - ./data:/mnt
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import httpx; httpx.get('http://localhost:8000/health', timeout=5)",
+        ]
+      interval: 120s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  job-finder-agent-mcp:
+    image: job-finder-agent:latest
+    container_name: job-finder-agent-mcp
+    command: ["python", "src/mcp_server.py"]
+    network_mode: host
+    environment:
+      - ENV=prod
+      - MOUNT_FOLDER=/mnt
+    volumes:
+      - ./data:/mnt
+    env_file:
+      - .env
+    restart: unless-stopped
