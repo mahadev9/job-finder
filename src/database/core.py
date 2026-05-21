@@ -1,10 +1,13 @@
+import logging
 import os
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from config import settings
+from core.config import settings
 from database.models.base import Base
 import database.models  # noqa: F401
+
+logger = logging.getLogger("job-finder")
 
 
 def _db_path() -> str:
@@ -14,7 +17,9 @@ def _db_path() -> str:
 
 
 engine = create_async_engine(f"sqlite+aiosqlite:///{_db_path()}", echo=False)
-SessionLocal: async_sessionmaker[AsyncSession] = async_sessionmaker(engine, expire_on_commit=False)
+SessionLocal: async_sessionmaker[AsyncSession] = async_sessionmaker(
+    engine, expire_on_commit=False
+)
 
 
 async def init_db() -> None:

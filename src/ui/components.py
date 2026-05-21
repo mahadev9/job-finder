@@ -8,18 +8,22 @@ STATUS_OPTIONS = [s.value for s in JobStatus]
 MATCH_COL_WIDTHS = [2, 3, 1, 2]
 
 
-def render_action_buttons() -> tuple[bool, bool]:
+def render_action_buttons(
+    fetch_disabled: bool = False, match_disabled: bool = False
+) -> tuple[bool, bool]:
     col_fetch, col_match, _ = st.columns([1, 1, 4])
     with col_fetch:
         fetch = st.button(
             "🔍 Fetch New Jobs",
             use_container_width=True,
+            disabled=fetch_disabled,
             help="Scan all enabled portals and save new job listings to the database.",
         )
     with col_match:
         match = st.button(
             "⚙️ Run Match Pipeline",
             use_container_width=True,
+            disabled=match_disabled,
             help="Score all unmatched jobs against your profile and save results.",
         )
     return fetch, match

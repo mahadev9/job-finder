@@ -43,18 +43,17 @@ async def run_match_pipeline() -> int:
         logger.info("No jobs found for today — skipping match pipeline")
         return 0
 
-    logger.info("Running match pipeline on %d job(s)", len(jobs))
+    logger.info(f"Running match pipeline on {len(jobs)} job(s)")
     profile, cv = _load_templates()
     system_prompt = build_match_system_prompt(profile, cv)
 
+    total_batches = -(-len(jobs) // _BATCH_SIZE)
     for i in range(0, len(jobs), _BATCH_SIZE):
         batch = jobs[i : i + _BATCH_SIZE]
-        logger.info(
-            "Matching batch %d/%d (%d jobs)",
-            i // _BATCH_SIZE + 1,
-            -(-len(jobs) // _BATCH_SIZE),
-            len(batch),
-        )
+        batch_num = i // _BATCH_SIZE + 1
+        logger.info(f"Matching batch {batch_num}/{total_batches} ({len(batch)} jobs)")
         await invoke_agent(_build_match_prompt(batch), system_prompt)
+        logger.info(f"Batch {batch_num}/{total_batches} complete")
 
+    logger.info(f"Match pipeline complete: evaluated {len(jobs)} job(s)")
     return len(jobs)

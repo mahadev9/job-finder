@@ -49,7 +49,8 @@ async def bulk_update_matched_job_status(updates: dict[int, JobStatus]) -> None:
         jobs = result.scalars().all()
         if len(jobs) != len(updates):
             missing = set(updates) - {j.id for j in jobs}
-            logger.warning("Status update skipped for unknown job IDs: %s", missing)
+            logger.warning(f"Status update skipped for unknown job IDs: {missing}")
         for job in jobs:
             job.status = updates[job.id]
         await session.commit()
+        logger.info(f"Updated status for {len(jobs)} job(s)")

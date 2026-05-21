@@ -71,34 +71,69 @@ title_filter:
     - "NLP"
     - "LLMOps"
     - "MLOps"
-    # -- Engineering roles --
+    - "Machine Learning"
+    - "Applied AI"
+    - "Applied ML"
+    - "Deep Learning"
+    - "Computer Vision"
+    - "RAG"
+    - "LangChain"
+    - "LangGraph"
+    # -- Engineering & deployment roles --
     - "Platform Engineer"
-    - "Solutions Architect"
     - "Solutions Engineer"
+    - "Forward Deployed"
+    - "Automation Engineer"
+    - "AI Platform"
+    - "ML Platform"
+    # -- DevRel / DX --
+    - "Developer Advocate"
+    - "DevRel"
+    - "Developer Experience"
+    - "Software Engineer"
   negative:
     # [CUSTOMIZE] Add keywords for roles you want to exclude
+    # -- Non-technical / business roles --
     - "Product Manager"
     - "Program Manager"
     - "Project Manager"
-    - "Intern"
+    - "Business Analyst"
+    - "Financial Analyst"
+    - "Data Analyst"
+    - "Recruiter"
+    - "Account Executive"
+    - "Account Manager"
+    - "Sales Manager"
+    - "Marketing Manager"
+    - "Technical Writer"
+    - "UX Designer"
+    - "UI Designer"
+    - "Product Designer"
+    # -- Hardware / infra roles --
+    - "Network Engineer"
+    - "Hardware Engineer"
+    - "Embedded"
+    - "Firmware"
+    - "FPGA"
+    - "ASIC"
+    # -- Out-of-stack languages (title-level signal) --
     - ".NET"
     - "Java "
     - "iOS"
     - "Android"
     - "PHP"
     - "Ruby"
-    - "Embedded"
-    - "Firmware"
-    - "FPGA"
-    - "ASIC"
+    - "COBOL"
+    - "Mainframe"
+    # -- Domains outside target --
     - "Blockchain"
     - "Web3"
     - "Crypto"
     - "Salesforce Admin"
     - "SAP "
     - "Oracle EBS"
-    - "Mainframe"
-    - "COBOL"
+    # -- Seniority / type exclusions --
+    - "Intern"
   seniority_boost:
     # These prefixes add relevance but are not required
     - "Senior"
@@ -124,6 +159,10 @@ search_queries:
     query: 'site:jobs.ashbyhq.com "Agentic" OR "AI Agent" OR "Automation Architect" remote'
     enabled: true
 
+  - name: Ashby — Software Engineer
+    query: 'site:jobs.ashbyhq.com "Software Engineer"'
+    enabled: true
+
   # -- Greenhouse --
   - name: Greenhouse — SA & FDE
     query: 'site:boards.greenhouse.io OR site:job-boards.greenhouse.io "Solutions Architect" OR "Forward Deployed" AI remote'
@@ -133,18 +172,17 @@ search_queries:
     query: 'site:boards.greenhouse.io OR site:job-boards.greenhouse.io "AI Engineer" OR "LLM" OR "Agentic" remote'
     enabled: true
 
+  - name: Greenhouse — Software Engineer
+    query: 'site:boards.greenhouse.io OR site:job-boards.greenhouse.io "Software Engineer"'
+    enabled: true
+
   # -- Workable --
   - name: Workable — AI Roles
     query: 'site:apply.workable.com "AI Engineer" OR "ML Engineer" OR "Solutions Architect" OR "LLM" remote'
     enabled: true
 
-  # -- Voice AI & Conversational AI --
-  - name: Voice AI — FDE & SA
-    query: 'site:job-boards.greenhouse.io OR site:jobs.ashbyhq.com "Voice AI" OR "Conversational AI" OR "Speech" "Solutions" OR "Forward Deployed" OR "Customer Engineer"'
-    enabled: true
-
-  - name: Voice AI — AI Engineer
-    query: 'site:job-boards.greenhouse.io OR site:jobs.ashbyhq.com "Voice" OR "Speech" "AI Engineer" OR "Deployment" OR "Integration"'
+  - name: Workable — Software Engineer
+    query: 'site:apply.workable.com "Software Engineer"'
     enabled: true
 
   # -- Contact Center AI --
@@ -181,10 +219,18 @@ search_queries:
     query: 'site:jobs.lever.co "Solutions Architect" OR "Forward Deployed" OR "Solutions Engineer" AI remote'
     enabled: true
 
+  - name: Lever — Software Engineer
+    query: 'site:jobs.lever.co "Software Engineer"'
+    enabled: true
+
   # -- YC / Startup boards --
 
   - name: YC Jobs — AI Engineer/SA/FDE
     query: 'site:ycombinator.com/jobs OR site:workatastartup.com "AI Engineer" OR "ML Engineer" OR "Forward Deployed" OR "Solutions Architect" remote'
+    enabled: true
+
+  - name: YC Jobs — Software Engineer
+    query: 'site:ycombinator.com/jobs OR site:workatastartup.com "Software Engineer"'
     enabled: true
 
   # -- Aggregators --
@@ -217,6 +263,13 @@ search_queries:
 tracked_companies:
   # -- AI Labs & LLM providers --
 
+  - name: NVIDIA
+    careers_url: https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite?locationHierarchy1=2fcb99c455831013ea52fb338f2932d8&jobFamilyGroup=0c40f6bd1d8f10ae43ffaefd46dc7e78&workerSubType=0c40f6bd1d8f10adf6dae161b1844a15
+    scan_method: websearch
+    scan_query: 'site:nvidia.wd5.myworkdayjobs.com "AI" OR "Machine Learning" OR "LLM" OR "Solutions Architect" OR "Deep Learning"'
+    notes: "GPU/AI compute leader. AI Engineer / ML Engineer / SA roles."
+    enabled: true
+
   - name: Anthropic
     careers_url: https://job-boards.greenhouse.io/anthropic
     api: https://boards-api.greenhouse.io/v1/boards/anthropic/jobs
@@ -226,6 +279,49 @@ tracked_companies:
     careers_url: https://openai.com/careers
     scan_method: websearch
     scan_query: 'site:openai.com/careers "Solutions" OR "Forward Deployed" OR "AI Engineer"'
+    enabled: true
+
+  - name: Scale AI
+    careers_url: https://job-boards.greenhouse.io/scaleai
+    api: https://boards-api.greenhouse.io/v1/boards/scaleai/jobs
+    notes: "AI data platform. Applied AI / ML Engineer / FDE roles."
+    enabled: true
+
+  - name: Cohere
+    careers_url: https://cohere.com/careers
+    scan_method: websearch
+    scan_query: 'site:cohere.com/careers "AI Engineer" OR "Solutions" OR "Forward Deployed" OR "Applied"'
+    notes: "Enterprise LLM provider. SA and Applied AI roles."
+    enabled: true
+
+  # -- AI/ML Platforms --
+
+  - name: Databricks
+    careers_url: https://www.databricks.com/company/careers/open-positions?department=Engineering&location=United%20States
+    scan_method: websearch
+    scan_query: 'site:databricks.com "Solutions Architect" OR "AI Engineer" OR "ML Engineer" OR "Applied AI"'
+    notes: "Data+AI platform. Major SA and ML Engineer employer. AWS-native."
+    enabled: true
+
+  - name: Hugging Face
+    careers_url: https://apply.workable.com/huggingface
+    scan_method: websearch
+    scan_query: 'site:apply.workable.com/huggingface "AI Engineer" OR "Solutions" OR "ML Engineer"'
+    notes: "ML platform. Core stack in CV (Transformers, PEFT). AI Engineer / Solutions roles."
+    enabled: true
+
+  - name: MongoDB
+    careers_url: https://www.mongodb.com/company/careers/teams/engineering
+    scan_method: websearch
+    scan_query: 'site:mongodb.com/careers "Solutions Architect" OR "AI Engineer" OR "ML Engineer"'
+    notes: "Atlas Vector Search. Heavy SA hiring."
+    enabled: true
+
+  - name: Cerebras
+    careers_url: https://www.cerebras.ai/open-positions
+    scan_method: websearch
+    scan_query: 'site:cerebras.ai "AI Engineer" OR "ML Engineer" OR "Solutions Architect" OR "Deep Learning"'
+    notes: "AI compute. ML / AI Engineer roles."
     enabled: true
 
   # -- Voice AI & Conversational AI --
@@ -383,6 +479,34 @@ tracked_companies:
 
   # -- AI infra & LLMOps --
 
+  - name: Modal
+    careers_url: https://jobs.ashbyhq.com/modal?departmentId=a96f8030-5331-4b91-ae89-e2b77a4c35b4
+    scan_method: websearch
+    scan_query: 'site:jobs.ashbyhq.com/modal "AI Engineer" OR "ML Engineer" OR "Solutions"'
+    notes: "Serverless ML deployment platform. AI / ML Engineer roles."
+    enabled: true
+
+  - name: BrainTrust
+    careers_url: https://www.braintrust.dev/careers
+    scan_method: websearch
+    scan_query: 'site:braintrust.dev/careers "AI Engineer" OR "Solutions" OR "ML"'
+    notes: "AI evals and LLMOps platform."
+    enabled: true
+
+  - name: Redis
+    careers_url: https://redis.io/company/careers/current-job-openings/?location=United+States
+    scan_method: websearch
+    scan_query: 'site:redis.io/company/careers "Solutions Architect" OR "Solutions Engineer" OR "AI Engineer"'
+    notes: "In-memory DB + vector search. Used in CV (Redis query caching). SA / Solutions roles."
+    enabled: true
+
+  - name: Letta
+    careers_url: https://jobs.ashbyhq.com/letta
+    scan_method: websearch
+    scan_query: 'site:jobs.ashbyhq.com/letta OR site:letta.com/careers "AI Engineer" OR "Forward Deployed" OR "DevRel"'
+    notes: "AI agent memory platform (ex-MemGPT). Directly overlaps LangGraph/agentic work."
+    enabled: true
+
   - name: Lindy
     careers_url: https://jobs.ashbyhq.com/lindy
     scan_method: websearch
@@ -397,12 +521,6 @@ tracked_companies:
     scan_method: websearch
     scan_query: "site:jobs.ashbyhq.com/zapier"
     notes: "Remote-first. Automation platform leader."
-    enabled: true
-
-  - name: Boomi
-    careers_url: https://job-boards.greenhouse.io/boomilp
-    api: https://boards-api.greenhouse.io/v1/boards/boomilp/jobs
-    notes: "Integration and automation platform."
     enabled: true
 
   # -- Ashby-based (Playwright direct) --
@@ -455,8 +573,8 @@ tracked_companies:
   - name: WorkOS
     careers_url: https://jobs.ashbyhq.com/workos
     scan_method: websearch
-    scan_query: 'site:jobs.ashbyhq.com/workos "Solutions Engineer" OR "Developer Success" OR "Engineer"'
-    notes: "Developer tools and enterprise-ready auth/platform APIs."
+    scan_query: 'site:jobs.ashbyhq.com/workos "Solutions Engineer" OR "Developer Success" OR "Developer Experience"'
+    notes: "Developer tools. Solutions Engineer / Developer Success roles."
     enabled: true
 
   # -- Dev Tools / AI Infra (DevRel, SA, FDE focus) --
@@ -468,31 +586,18 @@ tracked_companies:
     notes: "Open-source Firebase alternative. Remote-first. Postgres + Auth + Storage. Strong DevRel/DX hiring."
     enabled: true
 
-  - name: Resend
-    careers_url: https://jobs.ashbyhq.com/resend
-    scan_method: websearch
-    scan_query: "site:jobs.ashbyhq.com/resend"
-    notes: "Email API for developers. Remote-first. DX/DevRel focused."
-    enabled: true
-
   - name: Clerk
     careers_url: https://jobs.ashbyhq.com/clerk
     scan_method: websearch
-    scan_query: "site:jobs.ashbyhq.com/clerk"
-    notes: "Auth & user management for developers. SE / TAM / PM roles."
+    scan_query: 'site:jobs.ashbyhq.com/clerk "Solutions Engineer" OR "Customer Engineer" OR "Developer Success"'
+    notes: "Auth & user management for developers. Solutions Engineer / CE roles."
     enabled: true
 
   - name: Inngest
     careers_url: https://jobs.ashbyhq.com/inngest
     scan_method: websearch
-    scan_query: "site:jobs.ashbyhq.com/inngest"
-    notes: "Durable workflow engine for serverless. DX/DevRel/Engineering hiring."
-    enabled: true
-
-  - name: PlanetScale
-    careers_url: https://job-boards.greenhouse.io/planetscale
-    api: https://boards-api.greenhouse.io/v1/boards/planetscale/jobs
-    notes: "Serverless MySQL platform. Customer Engineering, Engineering, Sales."
+    scan_query: 'site:jobs.ashbyhq.com/inngest "Developer Advocate" OR "DevRel" OR "Solutions Engineer"'
+    notes: "Durable workflow engine for serverless. DevRel / Solutions Engineer roles."
     enabled: true
 
   - name: Zep AI

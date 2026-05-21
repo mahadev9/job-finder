@@ -1,31 +1,42 @@
 import logging
-from pathlib import Path
+import os
 from typing import Iterator
 
 import yaml
 
+from core.config import settings
 from services.llm_agent import invoke_agent
-from services.prompt_config import FETCH_SYSTEM_PROMPT
+from services.prompt_config import build_fetch_system_prompt
 
 logger = logging.getLogger("job-finder")
-
-_PORTAL_YML = Path(__file__).parents[2] / "portal.yml"
 
 
 # ── Portal config ─────────────────────────────────────────────────────────────
 
 
 def _load_config() -> dict:
-    with open(_PORTAL_YML) as f:
+    with open(os.path.join(settings.APP_PATH, "src", "templates", "portals.yml")) as f:
         return yaml.safe_load(f)
 
 
+def _fetch_system_prompt() -> str:
+    tf = _load_config().get("title_filter", {})
+    return build_fetch_system_prompt(
+        positive=tf.get("positive"),
+        negative=tf.get("negative"),
+    )
+
+
 def get_enabled_queries() -> list[dict]:
-    return [q for q in _load_config().get("search_queries", []) if q.get("enabled", True)]
+    return [
+        q for q in _load_config().get("search_queries", []) if q.get("enabled", True)
+    ]
 
 
 def get_enabled_companies() -> list[dict]:
-    return [c for c in _load_config().get("tracked_companies", []) if c.get("enabled", True)]
+    return [
+        c for c in _load_config().get("tracked_companies", []) if c.get("enabled", True)
+    ]
 
 
 # ── Per-item fetch ────────────────────────────────────────────────────────────
@@ -37,11 +48,13 @@ async def fetch_from_query(name: str, query: str) -> None:
         f"For each result, extract the company name, job title, direct job URL, "
         f"and portal name (from the URL domain). Save each one with save_job_to_db."
     )
-    logger.info("Fetching search query: %s", name)
-    await invoke_agent(prompt, FETCH_SYSTEM_PROMPT)
+    logger.info(f"Fetching search query: {name}")
+    await invoke_agent(prompt, _fetch_system_prompt())
 
 
-async def fetch_from_company(name: str, careers_url: str, scan_query: str | None) -> None:
+async def fetch_from_company(
+    name: str, careers_url: str, scan_query: str | None
+) -> None:
     if scan_query:
         prompt = (
             f"Search for jobs at {name} using this query:\n{scan_query}\n\n"
@@ -55,8 +68,8 @@ async def fetch_from_company(name: str, careers_url: str, scan_query: str | None
             f"For each one, save it with save_job_to_db using company_name='{name}' "
             f"and the portal name derived from the URL domain."
         )
-    logger.info("Fetching company: %s", name)
-    await invoke_agent(prompt, FETCH_SYSTEM_PROMPT)
+    logger.info(f"Fetching company: {name}")
+    await invoke_agent(prompt, _fetch_system_prompt())
 
 
 # ── Iterable steps (used by UI for progress) ─────────────────────────────────

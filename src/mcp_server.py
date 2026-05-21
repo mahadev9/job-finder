@@ -60,6 +60,7 @@ async def save_job_to_db(
         job = Job(company_name=company_name, role=role, link=link, portal=portal)
         session.add(job)
         await session.commit()
+        logger.info(f"Added job: '{role}' at {company_name} (portal: {portal})")
         return (
             f"added: '{role}' at {company_name} saved successfully (portal: {portal})"
         )
@@ -70,7 +71,7 @@ async def save_job_to_db(
     description=(
         "Save a matched job to the pipeline. "
         "Deduplication is on company + role. "
-        "score is 0–10. "
+        "score is 0-10. "
         "status defaults to 'pending'; accepted values: pending, applied, rejected, low_match."
     ),
 )
@@ -118,6 +119,9 @@ async def save_matched_job(
         )
         session.add(job)
         await session.commit()
+        logger.info(
+            f"Added matched job: '{role}' at {company} (score: {score}, status: {job_status.value})"
+        )
         return f"added: '{role}' at {company} saved (score: {score}, status: {job_status.value}, role_link: {role_link}, reason: {reason})"
 
 

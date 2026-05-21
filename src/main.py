@@ -1,17 +1,20 @@
 import asyncio
 import logging
+import threading
+import time
 from datetime import datetime, timezone
 
 import streamlit as st
 
-from components import (
+from ui.components import (
     render_action_buttons,
     render_live_jobs,
     render_matched_jobs_table,
 )
 from database.core import init_db
 from database.models.matched_jobs import JobStatus
-from logger import bootstrap_logging
+from core.logger import bootstrap_logging
+from core.pipeline_state import pipeline_state
 from services.fetch_jobs import fetch_from_company, fetch_from_query, iter_fetch_steps
 from services.match_jobs import run_match_pipeline
 from services.queries import (
@@ -24,6 +27,46 @@ bootstrap_logging()
 logger = logging.getLogger("job-finder")
 
 
+async def _run_fetch() -> None:
+    steps = list(iter_fetch_steps())
+    fetch_start = datetime.now(timezone.utc)
+    pipeline_state.start("fetch")
+    try:
+        for i, (name, kind, data) in enumerate(steps):
+            pipeline_state.update((i + 1) / (len(steps) + 1), f"Fetching ({i + 1}/{len(steps)}): {name}…")
+            if kind == "query":
+                await fetch_from_query(name, data["query"])
+            else:
+                await fetch_from_company(
+                    name, data["careers_url"], data.get("scan_query")
+                )
+            pipeline_state.add_jobs(await get_new_jobs_since(fetch_start))
+        pipeline_state.finish(f"Fetched from {len(steps)} sources.")
+    except Exception as exc:
+        logger.exception("Fetch pipeline failed")
+        pipeline_state.fail(str(exc))
+
+
+async def _run_match() -> None:
+    pipeline_state.start("match")
+    try:
+        pipeline_state.update(0.05, "Running match pipeline…")
+        count = await run_match_pipeline()
+        if count == 0:
+            pipeline_state.finish(
+                "No jobs found for today. Run 'Fetch New Jobs' first.", "warning"
+            )
+        else:
+            pipeline_state.finish(f"Match pipeline complete — evaluated {count} job(s).")
+    except Exception as exc:
+        logger.exception("Match pipeline failed")
+        pipeline_state.fail(str(exc))
+
+
+def _start_in_thread(coro_fn) -> None:
+    threading.Thread(target=lambda: asyncio.run(coro_fn()), daemon=True).start()
+
+
 async def main() -> None:
     st.set_page_config(page_title="Job Finder", page_icon="💼", layout="wide")
     await init_db()
@@ -32,35 +75,38 @@ async def main() -> None:
     st.caption("Scan portals, run the match pipeline, and track your applications.")
     st.divider()
 
-    fetch_clicked, match_clicked = render_action_buttons()
+    state = pipeline_state.snapshot
+    is_running = state["running"] is not None
 
-    if fetch_clicked:
-        steps = list(iter_fetch_steps())
-        fetch_start = datetime.now(timezone.utc)
-        progress = st.progress(0, text="Starting fetch…")
-        st.subheader("Newly Added Jobs")
-        live_container = st.container()
+    fetch_clicked, match_clicked = render_action_buttons(
+        fetch_disabled=is_running,
+        match_disabled=is_running,
+    )
 
-        for i, (name, kind, data) in enumerate(steps):
-            progress.progress(i / len(steps), text=f"Fetching: {name}")
-            if kind == "query":
-                await fetch_from_query(name, data["query"])
-            else:
-                await fetch_from_company(
-                    name, data["careers_url"], data.get("scan_query")
-                )
-            render_live_jobs(live_container, await get_new_jobs_since(fetch_start))
+    if fetch_clicked and not is_running:
+        logger.info("Fetch pipeline triggered from UI")
+        _start_in_thread(_run_fetch)
+        st.rerun()
 
-        progress.progress(1.0, text="Done")
-        st.success(f"Fetched from {len(steps)} sources.")
+    if match_clicked and not is_running:
+        logger.info("Match pipeline triggered from UI")
+        _start_in_thread(_run_match)
+        st.rerun()
 
-    if match_clicked:
-        with st.spinner("Running match pipeline…"):
-            count = await run_match_pipeline()
-        if count == 0:
-            st.warning("No jobs found for today. Run 'Fetch New Jobs' first.")
-        else:
-            st.success(f"Match pipeline complete — evaluated {count} job(s).")
+    if is_running:
+        st.progress(state["progress"], text=state["status_text"])
+        if state["running"] == "fetch" and state["new_jobs"]:
+            st.subheader("Newly Added Jobs")
+            render_live_jobs(st.container(), state["new_jobs"])
+        time.sleep(1)
+        st.rerun()
+
+    if state["result_kind"] == "success":
+        st.success(state["result_message"])
+    elif state["result_kind"] == "warning":
+        st.warning(state["result_message"])
+    elif state["result_kind"] == "error":
+        st.error(state["result_message"])
 
     st.divider()
     st.subheader("Matched Jobs")

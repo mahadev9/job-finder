@@ -8,14 +8,21 @@ from langchain_mcp_adapters.client import MultiServerMCPClient
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.types import Checkpointer
 
-from config import settings
+from core.config import settings
 
 logger = logging.getLogger("job-finder")
 
 
 async def create_llm_agent(checkpointer: Checkpointer, system_prompt: str):
-    # client = MultiServerMCPClient(connections={})
-    # tools = await client.get_tools()
+    client = MultiServerMCPClient(
+        connections={
+            "job_finder": {
+                "transport": "streamable-http",
+                "url": "http://localhost:8050/mcp",
+            }
+        }
+    )
+    tools = await client.get_tools()
 
     tools = []
 
@@ -48,7 +55,8 @@ async def create_llm_agent(checkpointer: Checkpointer, system_prompt: str):
 
 
 async def invoke_agent(query: str, system_prompt: str) -> bool:
-    logger.info(f"Invoking agent with query: {query}")
+    preview = query[:120].replace("\n", " ")
+    logger.info(f"Invoking agent | query: {preview}{'…' if len(query) > 120 else ''}")
 
     async with AsyncSqliteSaver.from_conn_string(
         settings.CHECKPOINTER_DATABASE_PATH
@@ -58,6 +66,10 @@ async def invoke_agent(query: str, system_prompt: str) -> bool:
         config = RunnableConfig(
             configurable={"thread_id": str(uuid4())}, recursion_limit=100
         )
-        response = await agent.invoke([HumanMessage(content=query)], config=config)
+        response = await agent.ainvoke(
+            {"messages": [HumanMessage(content=query)]}, config=config
+        )
 
+    msg_count = len(response.get("messages", []))
+    logger.info(f"Agent invocation complete | messages in response: {msg_count}")
     return response
