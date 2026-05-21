@@ -4,19 +4,17 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from config import settings
 from database.models.base import Base
-import database.models  # noqa: F401 — registers all models with Base.metadata
+import database.models  # noqa: F401
 
 
-def _make_engine():
+def _db_path() -> str:
     db_path = settings.APP_DATABASE_PATH
     os.makedirs(os.path.dirname(db_path), exist_ok=True)
-    return create_async_engine(f"sqlite+aiosqlite:///{db_path}", echo=False)
+    return db_path
 
 
-engine = _make_engine()
-SessionLocal: async_sessionmaker[AsyncSession] = async_sessionmaker(
-    engine, expire_on_commit=False
-)
+engine = create_async_engine(f"sqlite+aiosqlite:///{_db_path()}", echo=False)
+SessionLocal: async_sessionmaker[AsyncSession] = async_sessionmaker(engine, expire_on_commit=False)
 
 
 async def init_db() -> None:

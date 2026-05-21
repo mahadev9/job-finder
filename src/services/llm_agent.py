@@ -9,12 +9,11 @@ from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.types import Checkpointer
 
 from config import settings
-from services.prompt_config import SYSTEM_PROMPT
 
 logger = logging.getLogger("job-finder")
 
 
-async def create_llm_agent(checkpointer: Checkpointer):
+async def create_llm_agent(checkpointer: Checkpointer, system_prompt: str):
     # client = MultiServerMCPClient(connections={})
     # tools = await client.get_tools()
 
@@ -43,18 +42,18 @@ async def create_llm_agent(checkpointer: Checkpointer):
         model=settings.llm_client,
         tools=tools,
         name="Job Finder Agent",
-        system_prompt=SYSTEM_PROMPT,
+        system_prompt=system_prompt,
         checkpointer=checkpointer,
     )
 
 
-async def invoke_agent(query: str) -> bool:
+async def invoke_agent(query: str, system_prompt: str) -> bool:
     logger.info(f"Invoking agent with query: {query}")
 
     async with AsyncSqliteSaver.from_conn_string(
         settings.CHECKPOINTER_DATABASE_PATH
     ) as checkpointer:
-        agent = await create_llm_agent(checkpointer)
+        agent = await create_llm_agent(checkpointer, system_prompt)
 
         config = RunnableConfig(
             configurable={"thread_id": str(uuid4())}, recursion_limit=100
