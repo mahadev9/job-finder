@@ -11,6 +11,7 @@ class JobStatus(str, enum.Enum):
     PENDING = "pending"
     APPLIED = "applied"
     REJECTED = "rejected"
+    LOW_MATCH = "low_match"
 
 
 class MatchedJob(Base):
@@ -28,6 +29,8 @@ class MatchedJob(Base):
         default=JobStatus.PENDING,
         index=True,
     )
+    role_link: Mapped[str] = mapped_column(String, nullable=False, default="")
+    reason: Mapped[str] = mapped_column(String, nullable=False, default="")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),

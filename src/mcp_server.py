@@ -5,9 +5,9 @@ from typing import AsyncIterator
 from fastmcp import FastMCP
 from sqlalchemy import select
 
-from src.database.core import SessionLocal, init_db
-from src.database.models.jobs import Job
-from src.database.models.matched_jobs import JobStatus, MatchedJob
+from database.core import SessionLocal, init_db
+from database.models.jobs import Job
+from database.models.matched_jobs import JobStatus, MatchedJob
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +46,7 @@ async def save_job_to_db(
     Returns a message indicating whether the job was added or already exists.
     Deduplication is performed on the job link.
     """
+
     async with SessionLocal() as session:
         result = await session.execute(select(Job).where(Job.link == link))
         existing = result.scalar_one_or_none()
@@ -69,20 +70,27 @@ async def save_job_to_db(
     description=(
         "Save a matched job to the pipeline. "
         "Deduplication is on company + role. "
-        "Status defaults to 'pending'; accepted values: pending, applied, rejected."
+        "score is 0–10. "
+        "status defaults to 'pending'; accepted values: pending, applied, rejected, low_match."
     ),
 )
 async def save_matched_job(
     company: str,
     role: str,
     score: float,
+    role_link: str,
+    reason: str,
     status: str = "pending",
 ) -> str:
+
     try:
         job_status = JobStatus(status.lower())
     except ValueError:
         valid = ", ".join(s.value for s in JobStatus)
         return f"error: invalid status '{status}'. Valid values: {valid}"
+
+    if not (0 <= score <= 10):
+        return "error: score must be between 0 and 10"
 
     async with SessionLocal() as session:
         result = await session.execute(
@@ -96,13 +104,21 @@ async def save_matched_job(
         if existing:
             return (
                 f"exists: '{existing.role}' at {existing.company} "
-                f"already saved (score: {existing.score}, status: {existing.status.value})"
+                f"already saved (score: {existing.score}, status: {existing.status.value}, "
+                f"role_link: {existing.role_link}, reason: {existing.reason})"
             )
 
-        job = MatchedJob(company=company, role=role, score=score, status=job_status)
+        job = MatchedJob(
+            company=company,
+            role=role,
+            score=score,
+            role_link=role_link,
+            reason=reason,
+            status=job_status,
+        )
         session.add(job)
         await session.commit()
-        return f"added: '{role}' at {company} saved (score: {score}, status: {job_status.value})"
+        return f"added: '{role}' at {company} saved (score: {score}, status: {job_status.value}, role_link: {role_link}, reason: {reason})"
 
 
 if __name__ == "__main__":

@@ -1,10 +1,11 @@
 import streamlit as st
 
 from database.models.jobs import Job
-from database.models.matched_jobs import MatchedJob
+from database.models.matched_jobs import JobStatus, MatchedJob
 
-STATUS_BADGE = {"pending": "🟡", "applied": "🔵", "rejected": "🔴"}
-COL_WIDTHS = [3, 3, 1, 1]
+STATUS_BADGE = {"pending": "🟡", "applied": "🔵", "rejected": "🔴", "low_match": "⚫"}
+STATUS_OPTIONS = [s.value for s in JobStatus]
+MATCH_COL_WIDTHS = [2, 3, 1, 2]
 
 
 def render_action_buttons() -> tuple[bool, bool]:
@@ -40,21 +41,36 @@ def render_live_jobs(
             cols[3].write(job.portal)
 
 
+def _status_label(value: str) -> str:
+    icon = STATUS_BADGE.get(value, "⚪")
+    return f"{icon} {value.replace('_', ' ').capitalize()}"
+
+
 def render_matched_jobs_table(jobs: list[MatchedJob]) -> None:
     if not jobs:
         st.info("No matched jobs found. Run the pipeline to populate results.")
         return
 
     st.caption(f"{len(jobs)} job(s) found")
-    cols = st.columns(COL_WIDTHS)
-    for col, label in zip(cols, ["**Company**", "**Role**", "**Score**", "**Status**"]):
+    cols = st.columns(MATCH_COL_WIDTHS)
+    for col, label in zip(
+        cols, ["**Company**", "**Role**", "**Score /10**", "**Status**"]
+    ):
         col.markdown(label)
     st.divider()
 
     for job in jobs:
-        icon = STATUS_BADGE.get(job.status.value, "⚪")
-        cols = st.columns(COL_WIDTHS)
+        cols = st.columns(MATCH_COL_WIDTHS)
         cols[0].write(job.company)
-        cols[1].write(job.role)
-        cols[2].write(f"{job.score:.2f}")
-        cols[3].write(f"{icon} {job.status.value.capitalize()}")
+        cols[1].markdown(f"[{job.role}]({job.role_link})")
+        cols[2].write(f"{job.score:.1f}")
+        cols[3].selectbox(
+            "",
+            options=STATUS_OPTIONS,
+            index=STATUS_OPTIONS.index(job.status.value),
+            key=f"status_{job.id}",
+            label_visibility="collapsed",
+            format_func=_status_label,
+        )
+        if job.reason:
+            st.caption(f"↳ {job.reason}")
