@@ -8,8 +8,8 @@ from langchain_mcp_adapters.client import MultiServerMCPClient
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.types import Checkpointer
 
-from src.config import settings
-from src.services.prompt_config import SYSTEM_PROMPT
+from config import settings
+from services.prompt_config import SYSTEM_PROMPT
 
 logger = logging.getLogger("job-finder")
 

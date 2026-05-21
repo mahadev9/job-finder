@@ -2,9 +2,9 @@ import os
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from src.config import settings
-from src.database.models.base import Base
-import src.database.models  # noqa: F401 — registers all models with Base.metadata
+from config import settings
+from database.models.base import Base
+import database.models  # noqa: F401 — registers all models with Base.metadata
 
 
 def _make_engine():
