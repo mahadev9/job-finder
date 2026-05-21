@@ -7,6 +7,7 @@ from sqlalchemy import select
 
 from src.database.core import SessionLocal, init_db
 from src.database.models.jobs import Job
+from src.database.models.matched_jobs import JobStatus, MatchedJob
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +62,47 @@ async def save_job_to_db(
         return (
             f"added: '{role}' at {company_name} saved successfully (portal: {portal})"
         )
+
+
+@mcp.tool(
+    name="save_matched_job",
+    description=(
+        "Save a matched job to the pipeline. "
+        "Deduplication is on company + role. "
+        "Status defaults to 'pending'; accepted values: pending, applied, rejected."
+    ),
+)
+async def save_matched_job(
+    company: str,
+    role: str,
+    score: float,
+    status: str = "pending",
+) -> str:
+    try:
+        job_status = JobStatus(status.lower())
+    except ValueError:
+        valid = ", ".join(s.value for s in JobStatus)
+        return f"error: invalid status '{status}'. Valid values: {valid}"
+
+    async with SessionLocal() as session:
+        result = await session.execute(
+            select(MatchedJob).where(
+                MatchedJob.company == company,
+                MatchedJob.role == role,
+            )
+        )
+        existing = result.scalar_one_or_none()
+
+        if existing:
+            return (
+                f"exists: '{existing.role}' at {existing.company} "
+                f"already saved (score: {existing.score}, status: {existing.status.value})"
+            )
+
+        job = MatchedJob(company=company, role=role, score=score, status=job_status)
+        session.add(job)
+        await session.commit()
+        return f"added: '{role}' at {company} saved (score: {score}, status: {job_status.value})"
 
 
 if __name__ == "__main__":
