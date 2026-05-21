@@ -50,8 +50,13 @@ async def _run_fetch() -> None:
 async def _run_match() -> None:
     pipeline_state.start("match")
     try:
-        pipeline_state.update(0.05, "Running match pipeline…")
-        count = await run_match_pipeline()
+        pipeline_state.update(0.05, "Loading jobs…")
+
+        def _on_batch(batch_num: int, total_batches: int) -> None:
+            progress = 0.1 + (batch_num / total_batches) * 0.85
+            pipeline_state.update(progress, f"Matching batch {batch_num}/{total_batches}…")
+
+        count = await run_match_pipeline(progress_callback=_on_batch)
         if count == 0:
             pipeline_state.finish(
                 "No jobs found for today. Run 'Fetch New Jobs' first.", "warning"

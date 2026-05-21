@@ -37,7 +37,7 @@ def _build_match_prompt(jobs: list[Job]) -> str:
     return "\n".join(lines)
 
 
-async def run_match_pipeline() -> int:
+async def run_match_pipeline(progress_callback=None) -> int:
     jobs = await get_todays_jobs()
     if not jobs:
         logger.info("No jobs found for today — skipping match pipeline")
@@ -52,6 +52,8 @@ async def run_match_pipeline() -> int:
         batch = jobs[i : i + _BATCH_SIZE]
         batch_num = i // _BATCH_SIZE + 1
         logger.info(f"Matching batch {batch_num}/{total_batches} ({len(batch)} jobs)")
+        if progress_callback:
+            progress_callback(batch_num, total_batches)
         await invoke_agent(_build_match_prompt(batch), system_prompt)
         logger.info(f"Batch {batch_num}/{total_batches} complete")
 
