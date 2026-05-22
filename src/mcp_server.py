@@ -9,7 +9,7 @@ from database.core import SessionLocal, init_db
 from database.models.jobs import Job
 from database.models.matched_jobs import JobStatus, MatchedJob
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("job-finder.mcp")
 
 
 @asynccontextmanager
@@ -52,6 +52,10 @@ async def save_job_to_db(
         existing = result.scalar_one_or_none()
 
         if existing:
+            logger.info(
+                f"Job already exists: '{existing.role}' at {existing.company_name} "
+                f"(portal: {existing.portal}, link: {existing.link})"
+            )
             return (
                 f"exists: '{existing.role}' at {existing.company_name} "
                 f"is already saved (portal: {existing.portal}, link: {link})"
@@ -103,6 +107,11 @@ async def save_matched_job(
         existing = result.scalar_one_or_none()
 
         if existing:
+            logger.info(
+                f"Matched job already exists: '{existing.role}' at {existing.company} "
+                f"(score: {existing.score}, status: {existing.status.value}, "
+                f"role_link: {existing.role_link}, reason: {existing.reason})"
+            )
             return (
                 f"exists: '{existing.role}' at {existing.company} "
                 f"already saved (score: {existing.score}, status: {existing.status.value}, "
@@ -126,4 +135,4 @@ async def save_matched_job(
 
 
 if __name__ == "__main__":
-    mcp.run(transport="streamable-http", port=8050)
+    mcp.run(transport="streamable-http", port=8050, log_level="warning")

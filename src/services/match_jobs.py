@@ -1,11 +1,12 @@
 import functools
 import logging
+from datetime import date
 from pathlib import Path
 
 from database.models.jobs import Job
 from services.llm_agent import invoke_agent
 from services.prompt_config import build_match_system_prompt
-from services.queries import get_todays_jobs
+from services.queries import get_jobs_for_date
 
 logger = logging.getLogger("job-finder")
 
@@ -37,8 +38,8 @@ def _build_match_prompt(jobs: list[Job]) -> str:
     return "\n".join(lines)
 
 
-async def run_match_pipeline(progress_callback=None) -> int:
-    jobs = await get_todays_jobs()
+async def run_match_pipeline(progress_callback=None, for_date: date | None = None) -> int:
+    jobs = await get_jobs_for_date(for_date or date.today())
     if not jobs:
         logger.info("No jobs found for today — skipping match pipeline")
         return 0

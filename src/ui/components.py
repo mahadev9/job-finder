@@ -1,3 +1,5 @@
+from datetime import date
+
 import streamlit as st
 
 from database.models.jobs import Job
@@ -10,8 +12,10 @@ MATCH_COL_WIDTHS = [2, 3, 1, 2]
 
 def render_action_buttons(
     fetch_disabled: bool = False, match_disabled: bool = False
-) -> tuple[bool, bool]:
-    col_fetch, col_match, _ = st.columns([1, 1, 4])
+) -> tuple[bool, bool, "date"]:
+    from datetime import date as _date
+
+    col_fetch, col_match, col_date, _ = st.columns([1, 1, 1, 3])
     with col_fetch:
         fetch = st.button(
             "🔍 Fetch New Jobs",
@@ -26,7 +30,15 @@ def render_action_buttons(
             disabled=match_disabled,
             help="Score all unmatched jobs against your profile and save results.",
         )
-    return fetch, match
+    with col_date:
+        match_date = st.date_input(
+            "Match date",
+            value=_date.today(),
+            disabled=match_disabled,
+            label_visibility="collapsed",
+            help="Date to run the match pipeline for. Defaults to today.",
+        )
+    return fetch, match, match_date
 
 
 def render_live_jobs(
