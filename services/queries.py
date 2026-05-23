@@ -1,5 +1,6 @@
 import logging
 from datetime import date, datetime, timedelta
+from typing import Optional
 
 from sqlalchemy import select
 
@@ -111,7 +112,13 @@ async def bulk_update_matched_job_status(updates: dict[int, JobStatus]) -> None:
         if len(jobs) != len(updates):
             missing = set(updates) - {j.id for j in jobs}
             logger.warning(f"Status update skipped for unknown job IDs: {missing}")
+        now = datetime.now(settings.tz)
         for job in jobs:
-            job.status = updates[job.id]
+            new_status = updates[job.id]
+            job.status = new_status
+            if new_status == JobStatus.PENDING:
+                job.status_changed_at = None
+            else:
+                job.status_changed_at = now
         await session.commit()
         logger.info(f"Updated status for {len(jobs)} job(s)")

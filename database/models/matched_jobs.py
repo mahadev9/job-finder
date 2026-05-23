@@ -36,6 +36,11 @@ class MatchedJob(Base):
         DateTime(timezone=True),
         default=lambda: datetime.now(settings.tz),
     )
+    status_changed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        default=None,
+    )
 
     __table_args__ = (
         UniqueConstraint("company", "role", name="uq_matched_jobs_company_role"),

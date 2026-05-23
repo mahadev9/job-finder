@@ -52,6 +52,7 @@ class JobRow(BaseModel):
     status_label: str
     status_color: str
     reason: str
+    status_changed_at: str = ""
 
 
 class FetchedJobRow(BaseModel):
@@ -86,6 +87,9 @@ def _to_row(j) -> JobRow:
         status_label=STATUS_LABELS.get(j.status.value, j.status.value),
         status_color=STATUS_COLORS.get(j.status.value, "gray"),
         reason=j.reason or "",
+        status_changed_at=(
+            j.status_changed_at.strftime("%b %d, %Y") if j.status_changed_at else ""
+        ),
     )
 
 
@@ -323,6 +327,7 @@ class AppState(rx.State):
 
     async def update_job_status(self, job_id: int, status: str):
         await bulk_update_matched_job_status({job_id: JobStatus(status)})
+        now_str = datetime.now(settings.tz).strftime("%b %d, %Y")
         self.jobs = [
             JobRow(
                 id=j.id,
@@ -340,6 +345,9 @@ class AppState(rx.State):
                 if j.id == job_id
                 else j.status_color,
                 reason=j.reason,
+                status_changed_at=(
+                    "" if status == "pending" else now_str
+                ) if j.id == job_id else j.status_changed_at,
             )
             for j in self.jobs
         ]

@@ -28,6 +28,7 @@ _ENSURE_INDEXES = [
 
 _MIGRATIONS = [
     "ALTER TABLE jobs ADD COLUMN pipeline_ran BOOLEAN NOT NULL DEFAULT 0",
+    "ALTER TABLE matched_jobs ADD COLUMN status_changed_at DATETIME",
 ]
 
 

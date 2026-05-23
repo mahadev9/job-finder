@@ -692,6 +692,14 @@ def job_row(job: Any) -> rx.Component:
             ),
             min_width="130px",
         ),
+        rx.table.cell(
+            rx.cond(
+                job.status_changed_at != "",
+                rx.text(job.status_changed_at, size="1", color_scheme="gray"),
+                rx.text("—", size="1", color_scheme="gray"),
+            ),
+            min_width="100px",
+        ),
         align="center",
     )
 
@@ -807,6 +815,7 @@ def jobs_section() -> rx.Component:
                             AppState.jobs_sort_asc,
                             AppState.sort_jobs("status"),
                         ),
+                        rx.table.column_header_cell("Changed"),
                     ),
                 ),
                 rx.table.body(
