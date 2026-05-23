@@ -205,3 +205,9 @@ job-finder/
 ├── docker-compose.yml
 └── requirements.txt
 ```
+
+---
+
+## Credits
+
+Inspired by [career-ops](https://github.com/santifer/career-ops) by [@santifer](https://github.com/santifer).
