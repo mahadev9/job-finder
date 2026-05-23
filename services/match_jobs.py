@@ -1,7 +1,8 @@
-import functools
 import logging
 from datetime import date
 from pathlib import Path
+
+import aiofiles
 
 from database.models.jobs import Job
 from services.llm_agent import invoke_agent
@@ -13,12 +14,19 @@ logger = logging.getLogger("job-finder")
 _TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
 _BATCH_SIZE = 15
 
+_templates_cache: tuple[str, str] | None = None
 
-@functools.cache
-def _load_templates() -> tuple[str, str]:
-    profile = (_TEMPLATES_DIR / "profile.md").read_text()
-    cv = (_TEMPLATES_DIR / "cv.md").read_text()
-    return profile, cv
+
+async def _load_templates() -> tuple[str, str]:
+    global _templates_cache
+    if _templates_cache is not None:
+        return _templates_cache
+    async with aiofiles.open(_TEMPLATES_DIR / "profile.md") as f:
+        profile = await f.read()
+    async with aiofiles.open(_TEMPLATES_DIR / "cv.md") as f:
+        cv = await f.read()
+    _templates_cache = (profile, cv)
+    return _templates_cache
 
 
 def _build_match_prompt(jobs: list[Job]) -> str:
@@ -38,14 +46,16 @@ def _build_match_prompt(jobs: list[Job]) -> str:
     return "\n".join(lines)
 
 
-async def run_match_pipeline(progress_callback=None, for_date: date | None = None) -> int:
+async def run_match_pipeline(
+    progress_callback=None, for_date: date | None = None
+) -> int:
     jobs = await get_jobs_for_date(for_date or date.today())
     if not jobs:
         logger.info("No jobs found for today — skipping match pipeline")
         return 0
 
     logger.info(f"Running match pipeline on {len(jobs)} job(s)")
-    profile, cv = _load_templates()
+    profile, cv = await _load_templates()
     system_prompt = build_match_system_prompt(profile, cv)
 
     total_batches = -(-len(jobs) // _BATCH_SIZE)
@@ -54,7 +64,7 @@ async def run_match_pipeline(progress_callback=None, for_date: date | None = Non
         batch_num = i // _BATCH_SIZE + 1
         logger.info(f"Matching batch {batch_num}/{total_batches} ({len(batch)} jobs)")
         if progress_callback:
-            progress_callback(batch_num, total_batches)
+            await progress_callback(batch_num, total_batches)
         await invoke_agent(_build_match_prompt(batch), system_prompt)
         logger.info(f"Batch {batch_num}/{total_batches} complete")
 

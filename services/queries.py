@@ -21,11 +21,17 @@ async def get_matched_jobs(
             stmt = stmt.where(MatchedJob.status == JobStatus(status_filter))
         if from_date:
             stmt = stmt.where(
-                MatchedJob.created_at >= datetime.combine(from_date, datetime.min.time(), tzinfo=timezone.utc)
+                MatchedJob.created_at
+                >= datetime.combine(from_date, datetime.min.time(), tzinfo=timezone.utc)
             )
         if to_date:
             stmt = stmt.where(
-                MatchedJob.created_at < datetime.combine(to_date + timedelta(days=1), datetime.min.time(), tzinfo=timezone.utc)
+                MatchedJob.created_at
+                < datetime.combine(
+                    to_date + timedelta(days=1),
+                    datetime.min.time(),
+                    tzinfo=timezone.utc,
+                )
             )
         return list((await session.execute(stmt)).scalars().all())
 
@@ -40,13 +46,38 @@ async def get_new_jobs_since(since: datetime) -> list[Job]:
 
 async def get_jobs_for_date(for_date: date) -> list[Job]:
     day_start = datetime.combine(for_date, datetime.min.time(), tzinfo=timezone.utc)
-    day_end = datetime.combine(for_date + timedelta(days=1), datetime.min.time(), tzinfo=timezone.utc)
+    day_end = datetime.combine(
+        for_date + timedelta(days=1), datetime.min.time(), tzinfo=timezone.utc
+    )
     async with SessionLocal() as session:
         stmt = (
             select(Job)
             .where(Job.created_at >= day_start, Job.created_at < day_end)
             .order_by(Job.created_at.asc())
         )
+        return list((await session.execute(stmt)).scalars().all())
+
+
+async def get_fetched_jobs(
+    from_date: date | None = None,
+    to_date: date | None = None,
+) -> list[Job]:
+    async with SessionLocal() as session:
+        stmt = select(Job).order_by(Job.created_at.desc())
+        if from_date:
+            stmt = stmt.where(
+                Job.created_at
+                >= datetime.combine(from_date, datetime.min.time(), tzinfo=timezone.utc)
+            )
+        if to_date:
+            stmt = stmt.where(
+                Job.created_at
+                < datetime.combine(
+                    to_date + timedelta(days=1),
+                    datetime.min.time(),
+                    tzinfo=timezone.utc,
+                )
+            )
         return list((await session.execute(stmt)).scalars().all())
 
 

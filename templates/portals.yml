@@ -1,0 +1,614 @@
+# Portal Scanner Configuration
+# Used by /career-ops scan to discover new offers automatically.
+#
+# Strategy (3 levels):
+#   1. Playwright → careers_url of each company (real-time, reliable)
+#   2. Greenhouse API → structured JSON (fast, Greenhouse-only)
+#   3. WebSearch with site: filters (broad discovery, may be stale)
+#
+# IMPORTANT: Each company in tracked_companies MUST have careers_url.
+#   Prefer the BRANDED company careers URL whenever available; use ATS-hosted URL only as fallback.
+#   ✅ https://careers.mastercard.com   ⚠️ https://mastercard.wd1.myworkdayjobs.com (fallback only)
+#   ✅ https://openai.com/careers       ⚠️ https://job-boards.greenhouse.io/openai (fallback only)
+#   Exception: ATS-hosted careers_url is acceptable when no branded careers page exists.
+#   Using raw ATS URLs when a branded page exists can cause false 410 errors (job ID mismatch).
+#
+# HOW TO CUSTOMIZE:
+#   1. Copy this file to portals.yml in the project root
+#   2. Edit title_filter.positive with YOUR target role keywords
+#   3. Add/remove companies in tracked_companies
+#   4. Adjust search_queries for your preferred job boards
+#   5. Set enabled: false on companies you don't care about
+
+# -- Location filter (optional) --
+# Filter scanned jobs by location. Applied AFTER title filter, BEFORE dedup.
+# If this entire block is absent, all locations pass (current default behavior).
+#
+# Semantics:
+#   - Empty location string on a job → pass (don't penalize missing data)
+#   - Any `block` keyword present → reject (takes precedence over allow)
+#   - `allow` empty → pass (already cleared block)
+#   - `allow` non-empty → must match at least one keyword
+# All matches are case-insensitive substring.
+#
+# Example below targets US-based remote + a couple of US metros, blocking
+# common foreign hubs. Customize to your geography.
+
+# location_filter:
+#   allow:
+#     - "Remote"
+#     - "United States"
+#     - "USA"
+#     - "Atlanta"
+#     - "New York"
+#   block:
+#     - "India"
+#     - "Bengaluru"
+#     - "United Kingdom"
+#     - "London"
+#     - "Germany"
+#     - "France"
+#     - "Singapore"
+#     - "Japan"
+#     - "Brazil"
+#     - "Australia"
+
+# -- Title filter --
+# The scanner uses these keywords to decide if a title is relevant.
+# At least 1 positive must match AND 0 negatives must match (case-insensitive).
+
+title_filter:
+  positive:
+    # [CUSTOMIZE] Add keywords matching YOUR target roles
+    # -- AI/ML roles --
+    - "AI"
+    - "ML"
+    - "LLM"
+    - "Agent"
+    - "Agentic"
+    - "GenAI"
+    - "Generative AI"
+    - "NLP"
+    - "LLMOps"
+    - "MLOps"
+    - "Machine Learning"
+    - "Applied AI"
+    - "Applied ML"
+    - "Deep Learning"
+    - "Computer Vision"
+    - "RAG"
+    - "LangChain"
+    - "LangGraph"
+    # -- Engineering & deployment roles --
+    - "Platform Engineer"
+    - "Solutions Engineer"
+    - "Forward Deployed"
+    - "Automation Engineer"
+    - "AI Platform"
+    - "ML Platform"
+    # -- DevRel / DX --
+    - "Developer Advocate"
+    - "DevRel"
+    - "Developer Experience"
+    - "Software Engineer"
+  negative:
+    # [CUSTOMIZE] Add keywords for roles you want to exclude
+    # -- Non-technical / business roles --
+    - "Product Manager"
+    - "Program Manager"
+    - "Project Manager"
+    - "Business Analyst"
+    - "Financial Analyst"
+    - "Data Analyst"
+    - "Recruiter"
+    - "Account Executive"
+    - "Account Manager"
+    - "Sales Manager"
+    - "Marketing Manager"
+    - "Technical Writer"
+    - "UX Designer"
+    - "UI Designer"
+    - "Product Designer"
+    # -- Hardware / infra roles --
+    - "Network Engineer"
+    - "Hardware Engineer"
+    - "Embedded"
+    - "Firmware"
+    - "FPGA"
+    - "ASIC"
+    # -- Out-of-stack languages (title-level signal) --
+    - ".NET"
+    - "Java "
+    - "iOS"
+    - "Android"
+    - "PHP"
+    - "Ruby"
+    - "COBOL"
+    - "Mainframe"
+    # -- Domains outside target --
+    - "Blockchain"
+    - "Web3"
+    - "Crypto"
+    - "Salesforce Admin"
+    - "SAP "
+    - "Oracle EBS"
+    # -- Seniority / type exclusions --
+    - "Intern"
+  seniority_boost:
+    # These prefixes add relevance but are not required
+    - "Senior"
+    - "Mid"
+    - "Mid-Level"
+    - "Junior"
+
+# -- Search queries --
+# Each query triggers a WebSearch. Use site: to filter by portal.
+# The scanner extracts title, URL, and company from results.
+
+search_queries:
+  # -- Ashby --
+  - name: Ashby — Solutions Architect
+    query: 'site:jobs.ashbyhq.com "Solutions Architect" AI OR automation remote'
+    enabled: true
+
+  # - name: Ashby — AI Engineer
+  #   query: 'site:jobs.ashbyhq.com "AI Engineer" OR "LLM Engineer" OR "Forward Deployed" remote'
+  #   enabled: true
+
+  # - name: Ashby — Agentic
+  #   query: 'site:jobs.ashbyhq.com "Agentic" OR "AI Agent" OR "Automation Architect" remote'
+  #   enabled: true
+
+  # - name: Ashby — Software Engineer
+  #   query: 'site:jobs.ashbyhq.com "Software Engineer"'
+  #   enabled: true
+
+  # # -- Greenhouse --
+  # - name: Greenhouse — SA & FDE
+  #   query: 'site:boards.greenhouse.io OR site:job-boards.greenhouse.io "Solutions Architect" OR "Forward Deployed" AI remote'
+  #   enabled: true
+
+  # - name: Greenhouse — AI Engineer
+  #   query: 'site:boards.greenhouse.io OR site:job-boards.greenhouse.io "AI Engineer" OR "LLM" OR "Agentic" remote'
+  #   enabled: true
+
+  # - name: Greenhouse — Software Engineer
+  #   query: 'site:boards.greenhouse.io OR site:job-boards.greenhouse.io "Software Engineer"'
+  #   enabled: true
+
+  # # -- Workable --
+  # - name: Workable — AI Roles
+  #   query: 'site:apply.workable.com "AI Engineer" OR "ML Engineer" OR "Solutions Architect" OR "LLM" remote'
+  #   enabled: true
+
+  # - name: Workable — Software Engineer
+  #   query: 'site:apply.workable.com "Software Engineer"'
+  #   enabled: true
+
+  # # -- Contact Center AI --
+  # - name: Contact Center AI — SA & SE
+  #   query: '"contact center" OR "customer service" "AI" "Solutions Architect" OR "Solutions Engineer" OR "Forward Deployed" remote'
+  #   enabled: true
+
+  # # -- FDE specific (cross-portal) --
+  # - name: FDE & Deployed Engineer — All portals
+  #   query: '"Forward Deployed Engineer" OR "Deployed Engineer" OR "Deployment Engineer" AI site:job-boards.greenhouse.io OR site:jobs.ashbyhq.com OR site:jobs.lever.co'
+  #   enabled: true
+
+  # # -- Remote job boards --
+
+  # - name: WeWorkRemotely — AI & DX
+  #   query: 'site:weworkremotely.com "AI" OR "DevRel" OR "Solutions Engineer" OR "Forward Deployed" OR "Founding Engineer"'
+  #   enabled: true
+
+  # - name: Working Nomads — AI/DevRel/SA
+  #   query: 'site:workingnomads.com "AI Engineer" OR "Developer Advocate" OR "Solutions Architect" OR "Forward Deployed"'
+  #   enabled: true
+
+  # - name: RemoteOK — AI/DevRel/SA
+  #   query: 'site:remoteok.com "AI Engineer" OR "Developer Advocate" OR "Solutions Architect" OR "Forward Deployed" OR "Founding Engineer"'
+  #   enabled: true
+
+  # # -- Lever --
+
+  # - name: Lever — AI & ML Engineer
+  #   query: 'site:jobs.lever.co "AI Engineer" OR "ML Engineer" OR "Machine Learning Engineer" OR "LLM Engineer" OR "Applied AI" remote'
+  #   enabled: true
+
+  # - name: Lever — Solutions & FDE
+  #   query: 'site:jobs.lever.co "Solutions Architect" OR "Forward Deployed" OR "Solutions Engineer" AI remote'
+  #   enabled: true
+
+  # - name: Lever — Software Engineer
+  #   query: 'site:jobs.lever.co "Software Engineer"'
+  #   enabled: true
+
+  # # -- YC / Startup boards --
+
+  # - name: YC Jobs — AI Engineer/SA/FDE
+  #   query: 'site:ycombinator.com/jobs OR site:workatastartup.com "AI Engineer" OR "ML Engineer" OR "Forward Deployed" OR "Solutions Architect" remote'
+  #   enabled: true
+
+  # - name: YC Jobs — Software Engineer
+  #   query: 'site:ycombinator.com/jobs OR site:workatastartup.com "Software Engineer"'
+  #   enabled: true
+
+  # # -- Aggregators --
+
+  # - name: Himalayas — Remote AI/Dev-tools
+  #   query: 'site:himalayas.app "AI Engineer" OR "Solutions Architect" OR "Developer Advocate" OR "Forward Deployed" OR "Founding Engineer"'
+  #   enabled: true
+
+  # - name: HN Who's Hiring — Remote AI
+  #   query: 'site:news.ycombinator.com OR site:hnrss.org "AI Engineer" OR "Forward Deployed" OR "DevRel" OR "Founding Engineer" remote'
+  #   enabled: true
+
+# -- Tracked companies --
+# Companies whose career pages are checked directly.
+# scan_method: playwright (default), websearch, greenhouse_api
+# For Greenhouse companies, add api: field for faster structured JSON access.
+#
+# Provider routing (scan.mjs):
+#   By default each entry is auto-detected from `careers_url` against the
+#   loaded providers in providers/*.mjs (ashby, greenhouse, lever — the
+#   first one whose detect() matches wins, alphabetical order).
+#
+#   Optional fields on a tracked_companies entry:
+#     provider: <id>     — force a specific provider, skipping detect().
+#                          Useful when careers_url is ambiguous or you want
+#                          to pin behavior. Value must match a loaded
+#                          provider's `id`.
+#     transport: http    — reserved for future transports. Defaults to http.
+
+# tracked_companies:
+#   # -- AI Labs & LLM providers --
+
+#   - name: NVIDIA
+#     careers_url: https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite?locationHierarchy1=2fcb99c455831013ea52fb338f2932d8&jobFamilyGroup=0c40f6bd1d8f10ae43ffaefd46dc7e78&workerSubType=0c40f6bd1d8f10adf6dae161b1844a15
+#     scan_method: websearch
+#     scan_query: 'site:nvidia.wd5.myworkdayjobs.com "AI" OR "Machine Learning" OR "LLM" OR "Solutions Architect" OR "Deep Learning"'
+#     notes: "GPU/AI compute leader. AI Engineer / ML Engineer / SA roles."
+#     enabled: true
+
+#   - name: Anthropic
+#     careers_url: https://job-boards.greenhouse.io/anthropic
+#     api: https://boards-api.greenhouse.io/v1/boards/anthropic/jobs
+#     enabled: true
+
+#   - name: OpenAI
+#     careers_url: https://openai.com/careers
+#     scan_method: websearch
+#     scan_query: 'site:openai.com/careers "Solutions" OR "Forward Deployed" OR "AI Engineer"'
+#     enabled: true
+
+#   - name: Scale AI
+#     careers_url: https://job-boards.greenhouse.io/scaleai
+#     api: https://boards-api.greenhouse.io/v1/boards/scaleai/jobs
+#     notes: "AI data platform. Applied AI / ML Engineer / FDE roles."
+#     enabled: true
+
+#   - name: Cohere
+#     careers_url: https://cohere.com/careers
+#     scan_method: websearch
+#     scan_query: 'site:cohere.com/careers "AI Engineer" OR "Solutions" OR "Forward Deployed" OR "Applied"'
+#     notes: "Enterprise LLM provider. SA and Applied AI roles."
+#     enabled: true
+
+#   # -- AI/ML Platforms --
+
+#   - name: Databricks
+#     careers_url: https://www.databricks.com/company/careers/open-positions?department=Engineering&location=United%20States
+#     scan_method: websearch
+#     scan_query: 'site:databricks.com "Solutions Architect" OR "AI Engineer" OR "ML Engineer" OR "Applied AI"'
+#     notes: "Data+AI platform. Major SA and ML Engineer employer. AWS-native."
+#     enabled: true
+
+#   - name: Hugging Face
+#     careers_url: https://apply.workable.com/huggingface
+#     scan_method: websearch
+#     scan_query: 'site:apply.workable.com/huggingface "AI Engineer" OR "Solutions" OR "ML Engineer"'
+#     notes: "ML platform. Core stack in CV (Transformers, PEFT). AI Engineer / Solutions roles."
+#     enabled: true
+
+#   - name: MongoDB
+#     careers_url: https://www.mongodb.com/company/careers/teams/engineering
+#     scan_method: websearch
+#     scan_query: 'site:mongodb.com/careers "Solutions Architect" OR "AI Engineer" OR "ML Engineer"'
+#     notes: "Atlas Vector Search. Heavy SA hiring."
+#     enabled: true
+
+#   - name: Cerebras
+#     careers_url: https://www.cerebras.ai/open-positions
+#     scan_method: websearch
+#     scan_query: 'site:cerebras.ai "AI Engineer" OR "ML Engineer" OR "Solutions Architect" OR "Deep Learning"'
+#     notes: "AI compute. ML / AI Engineer roles."
+#     enabled: true
+
+#   # -- Voice AI & Conversational AI --
+
+#   - name: Intercom
+#     careers_url: https://job-boards.greenhouse.io/intercom
+#     api: https://boards-api.greenhouse.io/v1/boards/intercom/jobs
+#     notes: "SF. Fin AI agent."
+#     enabled: true
+
+#   - name: Hume AI
+#     careers_url: https://job-boards.greenhouse.io/humeai
+#     api: https://boards-api.greenhouse.io/v1/boards/humeai/jobs
+#     notes: "NYC. Empathic voice AI."
+#     enabled: true
+
+#   - name: ElevenLabs
+#     careers_url: https://jobs.ashbyhq.com/elevenlabs
+#     scan_method: websearch
+#     scan_query: "site:jobs.ashbyhq.com/elevenlabs"
+#     notes: "Voice AI TTS leader."
+#     enabled: true
+
+#   - name: Deepgram
+#     careers_url: https://jobs.ashbyhq.com/deepgram
+#     scan_method: websearch
+#     scan_query: 'site:deepgram.com/careers OR "deepgram" "Solutions" OR "AI Engineer" site:jobs.ashbyhq.com'
+#     notes: "STT/TTS APIs."
+#     enabled: true
+
+#   - name: Vapi
+#     careers_url: https://jobs.ashbyhq.com/vapi
+#     scan_method: websearch
+#     scan_query: "site:jobs.ashbyhq.com/vapi"
+#     notes: "Voice AI infrastructure."
+#     enabled: true
+
+#   - name: Bland AI
+#     careers_url: https://jobs.ashbyhq.com/bland
+#     scan_method: websearch
+#     scan_query: "site:jobs.ashbyhq.com/bland"
+#     notes: "Voice phone agents. $65M Series B."
+#     enabled: true
+
+#   # -- AI-native platforms (FDE/SA teams) --
+
+#   - name: Retool
+#     careers_url: https://retool.com/careers
+#     scan_method: websearch
+#     scan_query: 'site:retool.com/careers "Deployed" OR "AI" OR "Solutions"'
+#     notes: "Popularized Deployed Engineer role."
+#     enabled: true
+
+#   - name: Airtable
+#     careers_url: https://job-boards.greenhouse.io/airtable
+#     api: https://boards-api.greenhouse.io/v1/boards/airtable/jobs
+#     notes: "No-code + AI platform."
+#     enabled: true
+
+#   - name: Vercel
+#     careers_url: https://job-boards.greenhouse.io/vercel
+#     api: https://boards-api.greenhouse.io/v1/boards/vercel/jobs
+#     notes: "AI SDK, v0.dev. Frontend AI tooling."
+#     enabled: true
+
+#   - name: Temporal
+#     careers_url: https://job-boards.greenhouse.io/temporal
+#     api: https://boards-api.greenhouse.io/v1/boards/temporal/jobs
+#     notes: "Workflow orchestration."
+#     enabled: true
+
+#   - name: Arize AI
+#     careers_url: https://job-boards.greenhouse.io/arizeai
+#     api: https://boards-api.greenhouse.io/v1/boards/arizeai/jobs
+#     notes: "LLMOps / AI observability."
+#     enabled: true
+
+#   - name: RunPod
+#     careers_url: https://job-boards.greenhouse.io/runpod
+#     api: https://boards-api.greenhouse.io/v1/boards/runpod/jobs
+#     notes: "GPU cloud for AI."
+#     enabled: true
+
+#   - name: Weights & Biases (CoreWeave)
+#     careers_url: https://job-boards.greenhouse.io/coreweave
+#     api: https://boards-api.greenhouse.io/v1/boards/coreweave/jobs
+#     notes: "Acquired by CoreWeave (announced March 2025, closed May 2025). W&B roles now live on CoreWeave's Greenhouse board. Old Lever URL (jobs.lever.co/wandb) returns 404."
+#     enabled: true
+
+#   - name: Glean
+#     careers_url: https://job-boards.greenhouse.io/gleanwork
+#     api: https://boards-api.greenhouse.io/v1/boards/gleanwork/jobs
+#     notes: "Enterprise AI search."
+#     enabled: true
+
+#   # -- Contact Center AI & CX --
+
+#   - name: LivePerson
+#     careers_url: https://liveperson.com/company/careers
+#     scan_method: websearch
+#     scan_query: 'site:liveperson.com/careers OR "liveperson" "Solutions" OR "AI" site:job-boards.greenhouse.io'
+#     notes: "NYC. Conversational AI enterprise."
+#     enabled: true
+
+#   - name: Sierra
+#     careers_url: https://jobs.ashbyhq.com/sierra
+#     scan_method: websearch
+#     scan_query: '"sierra.ai" "AI" "Forward Deployed" OR "Applied" OR "Solutions" site:jobs.ashbyhq.com'
+#     notes: "Bret Taylor (ex-CEO Salesforce). AI customer agents."
+#     enabled: true
+
+#   - name: Decagon
+#     careers_url: https://jobs.ashbyhq.com/decagon
+#     scan_method: websearch
+#     scan_query: '"decagon" "AI" "Forward Deployed" OR "Solutions" site:jobs.ashbyhq.com'
+#     notes: "AI customer support agents."
+#     enabled: true
+
+#   # -- Enterprise comms & contact center --
+
+#   - name: Twilio
+#     careers_url: https://www.twilio.com/en-us/company/jobs
+#     scan_method: websearch
+#     scan_query: 'site:twilio.com/company/jobs "AI" OR "Voice" "Solutions" OR "Architect"'
+#     notes: "Voice/messaging infrastructure."
+#     enabled: true
+
+#   - name: Dialpad
+#     careers_url: https://www.dialpad.com/careers
+#     scan_method: websearch
+#     scan_query: '"dialpad" "AI" "Solutions" OR "Engineer" site:job-boards.greenhouse.io OR site:jobs.ashbyhq.com'
+#     notes: "Voice AI for business comms."
+#     enabled: true
+
+#   - name: Gong
+#     careers_url: https://www.gong.io/careers
+#     scan_method: websearch
+#     scan_query: 'site:gong.io/careers "AI" OR "Solutions" OR "Architect"'
+#     notes: "Revenue intelligence with voice AI."
+#     enabled: true
+
+#   - name: Genesys
+#     careers_url: https://www.genesys.com/careers
+#     scan_method: websearch
+#     scan_query: 'site:genesys.com/careers "AI" "Solutions Architect" OR "AI Engineer"'
+#     notes: "Contact center cloud + AI."
+#     enabled: true
+
+#   - name: Salesforce
+#     careers_url: https://careers.salesforce.com
+#     scan_method: websearch
+#     scan_query: 'site:careers.salesforce.com "Forward Deployed" OR "AI Engineer" OR "Agentforce"'
+#     notes: "Agentforce = AI agents platform."
+#     enabled: true
+
+#   # -- AI infra & LLMOps --
+
+#   - name: Modal
+#     careers_url: https://jobs.ashbyhq.com/modal?departmentId=a96f8030-5331-4b91-ae89-e2b77a4c35b4
+#     scan_method: websearch
+#     scan_query: 'site:jobs.ashbyhq.com/modal "AI Engineer" OR "ML Engineer" OR "Solutions"'
+#     notes: "Serverless ML deployment platform. AI / ML Engineer roles."
+#     enabled: true
+
+#   - name: BrainTrust
+#     careers_url: https://www.braintrust.dev/careers
+#     scan_method: websearch
+#     scan_query: 'site:braintrust.dev/careers "AI Engineer" OR "Solutions" OR "ML"'
+#     notes: "AI evals and LLMOps platform."
+#     enabled: true
+
+#   - name: Redis
+#     careers_url: https://redis.io/company/careers/current-job-openings/?location=United+States
+#     scan_method: websearch
+#     scan_query: 'site:redis.io/company/careers "Solutions Architect" OR "Solutions Engineer" OR "AI Engineer"'
+#     notes: "In-memory DB + vector search. Used in CV (Redis query caching). SA / Solutions roles."
+#     enabled: true
+
+#   - name: Letta
+#     careers_url: https://jobs.ashbyhq.com/letta
+#     scan_method: websearch
+#     scan_query: 'site:jobs.ashbyhq.com/letta OR site:letta.com/careers "AI Engineer" OR "Forward Deployed" OR "DevRel"'
+#     notes: "AI agent memory platform (ex-MemGPT). Directly overlaps LangGraph/agentic work."
+#     enabled: true
+
+#   - name: Lindy
+#     careers_url: https://jobs.ashbyhq.com/lindy
+#     scan_method: websearch
+#     scan_query: '"lindy.ai" "AI" "Forward Deployed" OR "Solutions" site:jobs.ashbyhq.com'
+#     notes: "AI agent management platform."
+#     enabled: true
+
+#   # -- No-Code/Low-Code & Automation --
+
+#   - name: Zapier
+#     careers_url: https://jobs.ashbyhq.com/zapier
+#     scan_method: websearch
+#     scan_query: "site:jobs.ashbyhq.com/zapier"
+#     notes: "Remote-first. Automation platform leader."
+#     enabled: true
+
+#   # -- Ashby-based (Playwright direct) --
+
+#   - name: LangChain
+#     careers_url: https://jobs.ashbyhq.com/langchain
+#     notes: "LangChain/LangSmith framework."
+#     enabled: true
+
+#   - name: Pinecone
+#     careers_url: https://jobs.ashbyhq.com/pinecone
+#     notes: "Vector database."
+#     enabled: true
+
+#   # -- Lever-based (Playwright direct) --
+
+#   - name: Palantir
+#     careers_url: https://jobs.lever.co/palantir
+#     notes: "FDE roles. Mostly US/London."
+#     enabled: true
+
+#   # -- AI / Developer Tools --
+
+#   - name: Perplexity
+#     careers_url: https://jobs.ashbyhq.com/perplexity
+#     scan_method: websearch
+#     scan_query: 'site:jobs.ashbyhq.com/perplexity "AI" OR "Applied AI" OR "Forward Deployed" OR "Engineer"'
+#     notes: "AI-native search and enterprise AI platform."
+#     enabled: true
+
+#   - name: Clay Labs
+#     careers_url: https://jobs.ashbyhq.com/claylabs
+#     scan_method: websearch
+#     scan_query: 'site:jobs.ashbyhq.com/claylabs "AI" OR "Developer Experience" OR "Growth" OR "Engineer"'
+#     notes: "AI-native GTM and workflow automation platform."
+#     enabled: true
+
+#   - name: Runway
+#     careers_url: https://job-boards.greenhouse.io/runwayml
+#     api: https://boards-api.greenhouse.io/v1/boards/runwayml/jobs
+#     notes: "Generative AI video and creative tooling platform."
+#     enabled: true
+
+#   - name: Hightouch
+#     careers_url: https://job-boards.greenhouse.io/hightouch
+#     api: https://boards-api.greenhouse.io/v1/boards/hightouch/jobs
+#     notes: "Data activation platform with AI agents and solutions engineering roles."
+#     enabled: true
+
+#   - name: WorkOS
+#     careers_url: https://jobs.ashbyhq.com/workos
+#     scan_method: websearch
+#     scan_query: 'site:jobs.ashbyhq.com/workos "Solutions Engineer" OR "Developer Success" OR "Developer Experience"'
+#     notes: "Developer tools. Solutions Engineer / Developer Success roles."
+#     enabled: true
+
+#   # -- Dev Tools / AI Infra (DevRel, SA, FDE focus) --
+
+#   - name: Supabase
+#     careers_url: https://jobs.ashbyhq.com/supabase
+#     scan_method: websearch
+#     scan_query: "site:jobs.ashbyhq.com/supabase"
+#     notes: "Open-source Firebase alternative. Remote-first. Postgres + Auth + Storage. Strong DevRel/DX hiring."
+#     enabled: true
+
+#   - name: Clerk
+#     careers_url: https://jobs.ashbyhq.com/clerk
+#     scan_method: websearch
+#     scan_query: 'site:jobs.ashbyhq.com/clerk "Solutions Engineer" OR "Customer Engineer" OR "Developer Success"'
+#     notes: "Auth & user management for developers. Solutions Engineer / CE roles."
+#     enabled: true
+
+#   - name: Inngest
+#     careers_url: https://jobs.ashbyhq.com/inngest
+#     scan_method: websearch
+#     scan_query: 'site:jobs.ashbyhq.com/inngest "Developer Advocate" OR "DevRel" OR "Solutions Engineer"'
+#     notes: "Durable workflow engine for serverless. DevRel / Solutions Engineer roles."
+#     enabled: true
+
+#   - name: Zep AI
+#     careers_url: https://www.getzep.com/careers
+#     scan_method: websearch
+#     scan_query: '"Zep" "Forward Deployed" OR "Developer Relations" OR "Founding" site:workatastartup.com OR site:getzep.com'
+#     notes: "Context engineering platform for AI agents. YC W24. Lead FDE + DevRel Lead roles. US-only currently."
+#     enabled: true
+
+#   - name: Safari AI
+#     careers_url: https://job-boards.greenhouse.io/safariai
+#     api: https://boards-api.greenhouse.io/v1/boards/safariai/jobs
+#     notes: "Miami HQ. Computer vision AI for operations in the physical economy."
+#     enabled: true

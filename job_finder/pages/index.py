@@ -1,0 +1,700 @@
+from typing import Any
+
+import reflex as rx
+
+from job_finder.state import AppState
+
+_DATE_INPUT_STYLE: dict = {
+    "padding": "0px 8px",
+    "height": "32px",
+    "border": "1px solid var(--gray-a7)",
+    "border_radius": "var(--radius-2)",
+    "font_size": "13px",
+    "font_family": "inherit",
+    "color": "var(--gray-12)",
+    "background": "white",
+    "cursor": "pointer",
+}
+
+
+def date_input(
+    value: Any,
+    on_change: Any,
+    disabled: Any = False,
+    min_val: Any = "",
+    max_val: Any = "",
+) -> rx.Component:
+    return rx.el.input(
+        type="date",
+        value=value,
+        on_change=on_change,
+        disabled=disabled,
+        min=min_val,
+        max=max_val,
+        style=_DATE_INPUT_STYLE,
+    )
+
+
+def pagination_bar(
+    range_label: Any,
+    page: Any,
+    page_count: Any,
+    on_prev: Any,
+    on_next: Any,
+) -> rx.Component:
+    return rx.hstack(
+        rx.text(range_label, size="2", color_scheme="gray"),
+        rx.spacer(),
+        rx.hstack(
+            rx.text("Show", size="2", color_scheme="gray"),
+            rx.select.root(
+                rx.select.trigger(size="1"),
+                rx.select.content(
+                    rx.select.item("10", value="10"),
+                    rx.select.item("20", value="20"),
+                    rx.select.item("50", value="50"),
+                    rx.select.item("100", value="100"),
+                ),
+                value=AppState.page_size_str,
+                on_change=AppState.set_page_size,
+            ),
+            rx.separator(orientation="vertical", size="1"),
+            rx.button(
+                rx.icon("chevron_left", size=14),
+                on_click=on_prev,
+                disabled=page == 0,
+                variant="ghost",
+                color_scheme="gray",
+                size="1",
+            ),
+            rx.text(page + 1, " / ", page_count, size="2", color_scheme="gray"),
+            rx.button(
+                rx.icon("chevron_right", size=14),
+                on_click=on_next,
+                disabled=page >= page_count - 1,
+                variant="ghost",
+                color_scheme="gray",
+                size="1",
+            ),
+            align="center",
+            spacing="2",
+        ),
+        align="center",
+        width="100%",
+        padding_top="8px",
+    )
+
+
+# Navbar
+
+
+def navbar() -> rx.Component:
+    return rx.box(
+        rx.hstack(
+            rx.hstack(
+                rx.icon("briefcase", size=20, color="var(--indigo-9)"),
+                rx.heading("Job Finder", size="5", weight="bold"),
+                spacing="2",
+                align="center",
+            ),
+            rx.spacer(),
+            rx.text(
+                "Scan portals · match with AI · track applications",
+                size="2",
+                color_scheme="gray",
+            ),
+            width="100%",
+            align="center",
+            padding_x="24px",
+            padding_y="12px",
+        ),
+        background="white",
+        border_bottom="1px solid var(--gray-4)",
+        position="sticky",
+        top="0",
+        z_index="10",
+        width="100%",
+    )
+
+
+# Pipeline section
+
+
+def fetch_card() -> rx.Component:
+    return rx.card(
+        rx.vstack(
+            rx.hstack(
+                rx.badge("1", variant="solid", color_scheme="indigo", radius="full"),
+                rx.text("Fetch New Jobs", weight="bold", size="3"),
+                spacing="2",
+                align="center",
+            ),
+            rx.text(
+                "Scan all enabled portals and save new listings to the database.",
+                size="2",
+                color_scheme="gray",
+            ),
+            rx.spacer(),
+            rx.hstack(
+                rx.spacer(),
+                rx.button(
+                    rx.icon("search", size=14),
+                    "Fetch New Jobs",
+                    on_click=AppState.run_fetch,
+                    disabled=AppState.is_running,
+                    color_scheme="indigo",
+                    size="2",
+                    variant="solid",
+                ),
+                width="100%",
+            ),
+            width="100%",
+            height="100%",
+            align="start",
+        ),
+        width="100%",
+        flex="1",
+    )
+
+
+def match_card() -> rx.Component:
+    return rx.card(
+        rx.vstack(
+            rx.hstack(
+                rx.badge("2", variant="solid", color_scheme="violet", radius="full"),
+                rx.text("Run Match Pipeline", weight="bold", size="3"),
+                spacing="2",
+                align="center",
+            ),
+            rx.text(
+                "Score unmatched jobs against your profile using AI.",
+                size="2",
+                color_scheme="gray",
+            ),
+            rx.hstack(
+                rx.vstack(
+                    rx.text("For date", size="1", color_scheme="gray"),
+                    date_input(
+                        AppState.match_date,
+                        AppState.set_match_date,
+                        AppState.is_running,
+                    ),
+                    spacing="1",
+                    align="start",
+                ),
+                rx.spacer(),
+                rx.button(
+                    rx.icon("cpu", size=14),
+                    "Run Match",
+                    on_click=AppState.run_match,
+                    disabled=AppState.is_running,
+                    color_scheme="violet",
+                    size="2",
+                ),
+                align="end",
+                width="100%",
+            ),
+            spacing="3",
+            width="100%",
+            align="start",
+        ),
+        width="100%",
+        flex="1",
+    )
+
+
+def pipeline_section() -> rx.Component:
+    return rx.vstack(
+        rx.hstack(
+            fetch_card(),
+            match_card(),
+            spacing="4",
+            width="100%",
+            align="stretch",
+        ),
+        rx.cond(
+            AppState.is_running,
+            rx.card(
+                rx.vstack(
+                    rx.hstack(
+                        rx.spinner(size="2"),
+                        rx.text(AppState.status_text, size="2", weight="medium"),
+                        spacing="2",
+                        align="center",
+                    ),
+                    rx.progress(
+                        value=AppState.progress_pct,
+                        width="100%",
+                        color_scheme=rx.cond(
+                            AppState.running == "fetch", "indigo", "violet"
+                        ),
+                    ),
+                    spacing="2",
+                    width="100%",
+                ),
+                width="100%",
+                variant="surface",
+            ),
+        ),
+        result_banner(),
+        width="100%",
+        spacing="3",
+    )
+
+
+# Result banner
+
+
+def result_banner() -> rx.Component:
+    return rx.cond(
+        AppState.has_result,
+        rx.box(
+            rx.hstack(
+                rx.text(
+                    AppState.result_message,
+                    size="2",
+                    weight="medium",
+                    color=rx.cond(
+                        AppState.result_kind == "success",
+                        "var(--green-11)",
+                        rx.cond(
+                            AppState.result_kind == "warning",
+                            "var(--amber-11)",
+                            "var(--red-11)",
+                        ),
+                    ),
+                ),
+                rx.spacer(),
+                rx.button(
+                    "Dismiss",
+                    variant="ghost",
+                    size="1",
+                    color_scheme="gray",
+                    on_click=AppState.dismiss_result,
+                    cursor="pointer",
+                ),
+                align="center",
+                width="100%",
+            ),
+            padding="12px",
+            border_radius="var(--radius-3)",
+            background=rx.cond(
+                AppState.result_kind == "success",
+                "var(--green-2)",
+                rx.cond(
+                    AppState.result_kind == "warning",
+                    "var(--amber-2)",
+                    "var(--red-2)",
+                ),
+            ),
+            border=rx.cond(
+                AppState.result_kind == "success",
+                "1px solid var(--green-6)",
+                rx.cond(
+                    AppState.result_kind == "warning",
+                    "1px solid var(--amber-6)",
+                    "1px solid var(--red-6)",
+                ),
+            ),
+            width="100%",
+        ),
+    )
+
+
+# Live jobs feed
+
+
+def live_job_row(job: Any) -> rx.Component:
+    return rx.table.row(
+        rx.table.cell(rx.text(job.company, size="2", weight="medium")),
+        rx.table.cell(rx.text(job.role, size="2")),
+        rx.table.cell(
+            rx.badge(job.portal, variant="soft", color_scheme="indigo", size="1")
+        ),
+        rx.table.cell(
+            rx.link(
+                rx.hstack(rx.icon("external_link", size=12), "Open", spacing="1"),
+                href=job.link,
+                is_external=True,
+                size="2",
+                color_scheme="gray",
+            )
+        ),
+    )
+
+
+def live_jobs_panel() -> rx.Component:
+    return rx.cond(
+        AppState.running == "fetch",
+        rx.cond(
+            AppState.has_new_jobs,
+            rx.card(
+                rx.vstack(
+                    rx.hstack(
+                        rx.icon("zap", size=15, color="var(--amber-9)"),
+                        rx.text("Live — Newly Found Jobs", weight="bold", size="3"),
+                        rx.spacer(),
+                        rx.badge(
+                            AppState.new_job_count,
+                            " new",
+                            variant="soft",
+                            color_scheme="amber",
+                            size="2",
+                        ),
+                        align="center",
+                        spacing="2",
+                        width="100%",
+                    ),
+                    rx.table.root(
+                        rx.table.header(
+                            rx.table.row(
+                                rx.table.column_header_cell("Company"),
+                                rx.table.column_header_cell("Role"),
+                                rx.table.column_header_cell("Portal"),
+                                rx.table.column_header_cell(""),
+                            ),
+                        ),
+                        rx.table.body(
+                            rx.foreach(AppState.new_jobs, live_job_row),
+                        ),
+                        size="1",
+                        width="100%",
+                    ),
+                    spacing="3",
+                    width="100%",
+                ),
+                width="100%",
+            ),
+        ),
+    )
+
+
+# Fetched jobs tab
+
+
+def fetched_job_row(job: Any) -> rx.Component:
+    return rx.table.row(
+        rx.table.cell(
+            rx.text(job.company, weight="bold", size="2"),
+            min_width="160px",
+        ),
+        rx.table.cell(rx.text(job.role, size="2")),
+        rx.table.cell(
+            rx.badge(job.portal, variant="soft", color_scheme="indigo", size="1")
+        ),
+        rx.table.cell(
+            rx.text(job.fetched_date, size="1", color_scheme="gray"),
+            min_width="100px",
+        ),
+        rx.table.cell(
+            rx.link(
+                rx.hstack(rx.icon("external_link", size=12), "Open", spacing="1"),
+                href=job.link,
+                is_external=True,
+                size="2",
+                color_scheme="gray",
+            )
+        ),
+        align="center",
+    )
+
+
+def fetched_jobs_section() -> rx.Component:
+    return rx.vstack(
+        rx.hstack(
+            rx.heading("Fetched Jobs", size="5", weight="bold"),
+            rx.badge(
+                AppState.fetched_job_count_label,
+                variant="soft",
+                color_scheme="gray",
+                size="2",
+            ),
+            rx.spacer(),
+            rx.hstack(
+                rx.vstack(
+                    rx.text("From", size="1", color_scheme="gray"),
+                    date_input(
+                        AppState.fetched_from_date,
+                        AppState.set_fetched_from_date,
+                        max_val=AppState.fetched_to_date,
+                    ),
+                    spacing="1",
+                ),
+                rx.vstack(
+                    rx.text("To", size="1", color_scheme="gray"),
+                    date_input(
+                        AppState.fetched_to_date,
+                        AppState.set_fetched_to_date,
+                        disabled=AppState.fetched_from_date == "",
+                        min_val=AppState.fetched_from_date,
+                    ),
+                    spacing="1",
+                ),
+                spacing="3",
+                align="end",
+            ),
+            align="center",
+            width="100%",
+            wrap="wrap",
+            gap="3",
+        ),
+        rx.cond(
+            ~AppState.has_fetched_jobs,
+            rx.center(
+                rx.vstack(
+                    rx.icon("inbox", size=40, color="var(--gray-7)"),
+                    rx.text(
+                        "No fetched jobs yet.",
+                        size="3",
+                        color_scheme="gray",
+                        weight="medium",
+                    ),
+                    rx.text(
+                        "Click 'Fetch New Jobs' to scan enabled portals.",
+                        size="2",
+                        color_scheme="gray",
+                    ),
+                    align="center",
+                    spacing="2",
+                ),
+                padding_y="64px",
+                width="100%",
+            ),
+            rx.table.root(
+                rx.table.header(
+                    rx.table.row(
+                        rx.table.column_header_cell("Company"),
+                        rx.table.column_header_cell("Role"),
+                        rx.table.column_header_cell("Portal"),
+                        rx.table.column_header_cell("Fetched"),
+                        rx.table.column_header_cell(""),
+                    ),
+                ),
+                rx.table.body(
+                    rx.foreach(AppState.fetched_page_items, fetched_job_row),
+                ),
+                size="2",
+                width="100%",
+                variant="surface",
+            ),
+        ),
+        pagination_bar(
+            AppState.fetched_range_label,
+            AppState.fetched_page,
+            AppState.fetched_page_count,
+            AppState.fetched_prev_page,
+            AppState.fetched_next_page,
+        ),
+        spacing="4",
+        width="100%",
+        align="start",
+    )
+
+
+# Matched jobs tab
+
+
+def job_row(job: Any) -> rx.Component:
+    return rx.table.row(
+        rx.table.cell(
+            rx.text(job.company, weight="bold", size="2"),
+            min_width="160px",
+        ),
+        rx.table.cell(
+            rx.vstack(
+                rx.link(
+                    job.role,
+                    href=job.role_link,
+                    is_external=True,
+                    size="2",
+                    underline="hover",
+                ),
+                rx.cond(
+                    job.reason != "",
+                    rx.text(
+                        "↳ ",
+                        job.reason,
+                        size="1",
+                        color_scheme="gray",
+                    ),
+                ),
+                spacing="1",
+                align="start",
+            ),
+        ),
+        rx.table.cell(
+            rx.badge(
+                job.score_label,
+                color_scheme=job.score_color,
+                variant="soft",
+                size="2",
+            ),
+            min_width="80px",
+        ),
+        rx.table.cell(
+            rx.select.root(
+                rx.select.trigger(
+                    variant="soft",
+                    size="1",
+                    color_scheme=job.status_color,
+                ),
+                rx.select.content(
+                    rx.select.item("Pending", value="pending"),
+                    rx.select.item("Applied", value="applied"),
+                    rx.select.item("Rejected", value="rejected"),
+                    rx.select.item("Low Match", value="low_match"),
+                ),
+                value=job.status,
+                on_change=AppState.update_job_status(job.id),
+            ),
+            min_width="130px",
+        ),
+        align="center",
+    )
+
+
+def jobs_section() -> rx.Component:
+    return rx.vstack(
+        rx.hstack(
+            rx.heading("Matched Jobs", size="5", weight="bold"),
+            rx.badge(
+                AppState.job_count_label,
+                variant="soft",
+                color_scheme="gray",
+                size="2",
+            ),
+            rx.spacer(),
+            rx.hstack(
+                rx.select.root(
+                    rx.select.trigger(placeholder="All Statuses", size="2"),
+                    rx.select.content(
+                        rx.select.item("All Statuses", value="all"),
+                        rx.select.item("Pending", value="pending"),
+                        rx.select.item("Applied", value="applied"),
+                        rx.select.item("Rejected", value="rejected"),
+                        rx.select.item("Low Match", value="low_match"),
+                    ),
+                    value=AppState.status_filter,
+                    on_change=AppState.set_status_filter,
+                ),
+                rx.vstack(
+                    rx.text("From", size="1", color_scheme="gray"),
+                    date_input(
+                        AppState.from_date,
+                        AppState.set_from_date,
+                        max_val=AppState.to_date,
+                    ),
+                    spacing="1",
+                ),
+                rx.vstack(
+                    rx.text("To", size="1", color_scheme="gray"),
+                    date_input(
+                        AppState.to_date,
+                        AppState.set_to_date,
+                        disabled=AppState.from_date == "",
+                        min_val=AppState.from_date,
+                    ),
+                    spacing="1",
+                ),
+                spacing="3",
+                align="end",
+                wrap="wrap",
+            ),
+            align="center",
+            width="100%",
+            wrap="wrap",
+            gap="3",
+        ),
+        rx.cond(
+            ~AppState.has_jobs,
+            rx.center(
+                rx.vstack(
+                    rx.icon("inbox", size=40, color="var(--gray-7)"),
+                    rx.text(
+                        "No matched jobs yet.",
+                        size="3",
+                        color_scheme="gray",
+                        weight="medium",
+                    ),
+                    rx.text(
+                        "Fetch new jobs first, then run the match pipeline.",
+                        size="2",
+                        color_scheme="gray",
+                    ),
+                    align="center",
+                    spacing="2",
+                ),
+                padding_y="64px",
+                width="100%",
+            ),
+            rx.table.root(
+                rx.table.header(
+                    rx.table.row(
+                        rx.table.column_header_cell("Company"),
+                        rx.table.column_header_cell("Role"),
+                        rx.table.column_header_cell("Score"),
+                        rx.table.column_header_cell("Status"),
+                    ),
+                ),
+                rx.table.body(
+                    rx.foreach(AppState.jobs_page_items, job_row),
+                ),
+                size="2",
+                width="100%",
+                variant="surface",
+            ),
+        ),
+        pagination_bar(
+            AppState.jobs_range_label,
+            AppState.jobs_page,
+            AppState.jobs_page_count,
+            AppState.jobs_prev_page,
+            AppState.jobs_next_page,
+        ),
+        spacing="4",
+        width="100%",
+        align="start",
+    )
+
+
+# Page
+
+
+def index() -> rx.Component:
+    return rx.box(
+        navbar(),
+        rx.box(
+            rx.vstack(
+                pipeline_section(),
+                live_jobs_panel(),
+                rx.separator(width="100%"),
+                rx.tabs.root(
+                    rx.tabs.list(
+                        rx.tabs.trigger("Fetched Jobs", value="fetched"),
+                        rx.tabs.trigger("Matched Jobs", value="matched"),
+                    ),
+                    rx.tabs.content(
+                        fetched_jobs_section(),
+                        value="fetched",
+                        padding_top="16px",
+                    ),
+                    rx.tabs.content(
+                        jobs_section(),
+                        value="matched",
+                        padding_top="16px",
+                    ),
+                    default_value="fetched",
+                    width="100%",
+                ),
+                spacing="6",
+                width="100%",
+                align="start",
+            ),
+            padding_x="24px",
+            padding_y="20px",
+            width="100%",
+        ),
+        min_height="100vh",
+        background="var(--gray-1)",
+        width="100%",
+    )

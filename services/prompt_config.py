@@ -17,7 +17,9 @@ def build_fetch_system_prompt(
             f"(case-insensitive):\n  {', '.join(negative)}"
         )
     else:
-        negative_clause = "Skip listings for non-technical roles (HR, finance, marketing, etc.)."
+        negative_clause = (
+            "Skip listings for non-technical roles (HR, finance, marketing, etc.)."
+        )
 
     return f"""
 You are a job listing extraction agent for a job finder application.

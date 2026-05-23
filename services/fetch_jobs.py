@@ -1,7 +1,8 @@
 import logging
 import os
-from typing import Iterator
+from typing import AsyncIterator
 
+import aiofiles
 import yaml
 
 from core.config import settings
@@ -14,28 +15,34 @@ logger = logging.getLogger("job-finder")
 # ── Portal config ─────────────────────────────────────────────────────────────
 
 
-def _load_config() -> dict:
-    with open(os.path.join(settings.APP_PATH, "src", "templates", "portals.yml")) as f:
-        return yaml.safe_load(f)
+async def _load_config() -> dict:
+    path = os.path.join(settings.APP_PATH, "templates", "portals.yml")
+    async with aiofiles.open(path) as f:
+        content = await f.read()
+    return yaml.safe_load(content)
 
 
-def _fetch_system_prompt() -> str:
-    tf = _load_config().get("title_filter", {})
+async def _fetch_system_prompt() -> str:
+    tf = (await _load_config()).get("title_filter", {})
     return build_fetch_system_prompt(
         positive=tf.get("positive"),
         negative=tf.get("negative"),
     )
 
 
-def get_enabled_queries() -> list[dict]:
+async def get_enabled_queries() -> list[dict]:
     return [
-        q for q in _load_config().get("search_queries", []) if q.get("enabled", True)
+        q
+        for q in (await _load_config()).get("search_queries", [])
+        if q.get("enabled", True)
     ]
 
 
-def get_enabled_companies() -> list[dict]:
+async def get_enabled_companies() -> list[dict]:
     return [
-        c for c in _load_config().get("tracked_companies", []) if c.get("enabled", True)
+        c
+        for c in (await _load_config()).get("tracked_companies", [])
+        if c.get("enabled", True)
     ]
 
 
@@ -49,7 +56,7 @@ async def fetch_from_query(name: str, query: str) -> None:
         f"and portal name (from the URL domain). Save each one with save_job_to_db."
     )
     logger.info(f"Fetching search query: {name}")
-    await invoke_agent(prompt, _fetch_system_prompt())
+    await invoke_agent(prompt, await _fetch_system_prompt())
 
 
 async def fetch_from_company(
@@ -69,16 +76,15 @@ async def fetch_from_company(
             f"and the portal name derived from the URL domain."
         )
     logger.info(f"Fetching company: {name}")
-    await invoke_agent(prompt, _fetch_system_prompt())
+    await invoke_agent(prompt, await _fetch_system_prompt())
 
 
 # ── Iterable steps (used by UI for progress) ─────────────────────────────────
 
 
-def iter_fetch_steps() -> Iterator[tuple[str, str, dict]]:
-    """Yield (label, kind, data) for every enabled portal entry."""
-    for q in get_enabled_queries():
+async def iter_fetch_steps() -> AsyncIterator[tuple[str, str, dict]]:
+    for q in await get_enabled_queries():
         yield q["name"], "query", q
 
-    for c in get_enabled_companies():
+    for c in await get_enabled_companies():
         yield c["name"], "company", c

@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, String, UniqueConstraint
+from sqlalchemy import DateTime, Index, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database.models.base import Base
@@ -19,4 +19,7 @@ class Job(Base):
         default=lambda: datetime.now(timezone.utc),
     )
 
-    __table_args__ = (UniqueConstraint("link", name="uq_jobs_link"),)
+    __table_args__ = (
+        UniqueConstraint("link", name="uq_jobs_link"),
+        Index("ix_jobs_created_at", "created_at"),
+    )

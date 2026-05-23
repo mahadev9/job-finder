@@ -5,6 +5,7 @@ from typing import AsyncIterator
 from fastmcp import FastMCP
 from sqlalchemy import select
 
+from core.logger import bootstrap_logging
 from database.core import SessionLocal, init_db
 from database.models.jobs import Job
 from database.models.matched_jobs import JobStatus, MatchedJob
@@ -14,6 +15,7 @@ logger = logging.getLogger("job-finder.mcp")
 
 @asynccontextmanager
 async def lifespan(_: FastMCP) -> AsyncIterator[None]:
+    bootstrap_logging()
     await init_db()
     yield
 

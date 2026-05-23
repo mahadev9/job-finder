@@ -2,21 +2,29 @@ FROM python:3.13-slim
 
 WORKDIR /app
 
-# Install system dependencies required for some Python packages
-RUN apt-get update && apt-get install -y \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
+# System deps + Node.js 24 LTS (required by Reflex to build the frontend)
+RUN apt-get update && apt-get install -y gcc curl unzip && \
+    curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better layer caching
+# Python dependencies first for layer caching
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
-COPY src/ src/
+# Application code
+COPY rxconfig.py .
+COPY job_finder/ job_finder/
+COPY services/ services/
+COPY database/ database/
+COPY core/ core/
+COPY templates/ templates/
+COPY mcp_server.py .
 
-# Set Python environment variables
+# Pre-install Next.js dependencies so the first startup doesn't need to fetch them
+RUN reflex init --loglevel warning
+
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
-# Expose the API port (default FastAPI port)
-EXPOSE 8000
+EXPOSE 3000

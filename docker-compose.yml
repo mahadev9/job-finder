@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: job-finder-agent
-    command: ["streamlit", "run", "src/main.py"]
+    command: ["reflex", "run", "--env", "prod"]
     network_mode: host
     environment:
       - ENV=prod
@@ -19,7 +19,7 @@ services:
   job-finder-agent-mcp:
     image: job-finder-agent:latest
     container_name: job-finder-agent-mcp
-    command: ["python", "src/mcp_server.py"]
+    command: ["python", "mcp_server.py"]
     network_mode: host
     environment:
       - ENV=prod

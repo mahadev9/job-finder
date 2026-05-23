@@ -1,7 +1,7 @@
 import enum
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, Enum, Float, String, UniqueConstraint
+from sqlalchemy import DateTime, Enum, Float, Index, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database.models.base import Base
@@ -38,4 +38,7 @@ class MatchedJob(Base):
 
     __table_args__ = (
         UniqueConstraint("company", "role", name="uq_matched_jobs_company_role"),
+        Index("ix_matched_jobs_created_at", "created_at"),
+        Index("ix_matched_jobs_status_created_at", "status", "created_at"),
+        Index("ix_matched_jobs_score_desc", "score"),
     )
