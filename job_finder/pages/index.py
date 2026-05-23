@@ -12,8 +12,9 @@ _DATE_INPUT_STYLE: dict = {
     "font_size": "13px",
     "font_family": "inherit",
     "color": "var(--gray-12)",
-    "background": "white",
+    "background": "var(--color-surface)",
     "cursor": "pointer",
+    "color_scheme": "normal",
 }
 
 
@@ -119,24 +120,29 @@ def navbar() -> rx.Component:
     return rx.box(
         rx.hstack(
             rx.hstack(
-                rx.icon("briefcase", size=20, color="var(--indigo-9)"),
+                rx.icon("briefcase", size=20, color="var(--violet-9)"),
                 rx.heading("Job Finder", size="5", weight="bold"),
                 spacing="2",
                 align="center",
             ),
             rx.spacer(),
-            rx.text(
-                "Scan portals · match with AI · track applications",
-                size="2",
-                color_scheme="gray",
+            rx.hstack(
+                rx.text(
+                    "Scan portals · match with AI · track applications",
+                    size="2",
+                    color_scheme="gray",
+                ),
+                rx.color_mode.button(variant="ghost", size="2"),
+                spacing="3",
+                align="center",
             ),
             width="100%",
             align="center",
             padding_x="24px",
             padding_y="12px",
         ),
-        background="white",
-        border_bottom="1px solid var(--gray-4)",
+        background="var(--color-panel-solid)",
+        border_bottom="1px solid var(--gray-a4)",
         position="sticky",
         top="0",
         z_index="10",

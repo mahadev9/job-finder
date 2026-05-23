@@ -7,10 +7,11 @@ config = rx.Config(
         rx.plugins.SitemapPlugin,
         rx.plugins.RadixThemesPlugin(
             rx.theme(
-                appearance="light",
-                accent_color="indigo",
+                appearance="dark",
+                accent_color="violet",
                 gray_color="slate",
                 radius="medium",
+                has_background=True,
             )
         ),
     ],
