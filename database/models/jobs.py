@@ -1,8 +1,9 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
-from sqlalchemy import DateTime, Index, String, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, Index, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
+from core.config import settings
 from database.models.base import Base
 
 
@@ -16,8 +17,9 @@ class Job(Base):
     portal: Mapped[str] = mapped_column(String, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(settings.tz),
     )
+    pipeline_ran: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     __table_args__ = (
         UniqueConstraint("link", name="uq_jobs_link"),

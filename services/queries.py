@@ -1,8 +1,9 @@
 import logging
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta
 
 from sqlalchemy import select
 
+from core.config import settings
 from database.core import SessionLocal
 from database.models.jobs import Job
 from database.models.matched_jobs import JobStatus, MatchedJob
@@ -22,7 +23,7 @@ async def get_matched_jobs(
         if from_date:
             stmt = stmt.where(
                 MatchedJob.created_at
-                >= datetime.combine(from_date, datetime.min.time(), tzinfo=timezone.utc)
+                >= datetime.combine(from_date, datetime.min.time(), tzinfo=settings.tz)
             )
         if to_date:
             stmt = stmt.where(
@@ -30,7 +31,7 @@ async def get_matched_jobs(
                 < datetime.combine(
                     to_date + timedelta(days=1),
                     datetime.min.time(),
-                    tzinfo=timezone.utc,
+                    tzinfo=settings.tz,
                 )
             )
         return list((await session.execute(stmt)).scalars().all())
@@ -44,18 +45,36 @@ async def get_new_jobs_since(since: datetime) -> list[Job]:
         return list((await session.execute(stmt)).scalars().all())
 
 
-async def get_jobs_for_date(for_date: date) -> list[Job]:
-    day_start = datetime.combine(for_date, datetime.min.time(), tzinfo=timezone.utc)
+async def get_jobs_for_date(
+    for_date: date, companies: list[str] | None = None
+) -> list[Job]:
+    day_start = datetime.combine(for_date, datetime.min.time(), tzinfo=settings.tz)
     day_end = datetime.combine(
-        for_date + timedelta(days=1), datetime.min.time(), tzinfo=timezone.utc
+        for_date + timedelta(days=1), datetime.min.time(), tzinfo=settings.tz
     )
     async with SessionLocal() as session:
         stmt = (
             select(Job)
-            .where(Job.created_at >= day_start, Job.created_at < day_end)
+            .where(
+                Job.created_at >= day_start,
+                Job.created_at < day_end,
+                Job.pipeline_ran == False,  # noqa: E712
+            )
             .order_by(Job.created_at.asc())
         )
+        if companies:
+            stmt = stmt.where(Job.company_name.in_(companies))
         return list((await session.execute(stmt)).scalars().all())
+
+
+async def mark_jobs_matched(job_ids: list[int]) -> None:
+    if not job_ids:
+        return
+    async with SessionLocal() as session:
+        result = await session.execute(select(Job).where(Job.id.in_(job_ids)))
+        for job in result.scalars().all():
+            job.pipeline_ran = True
+        await session.commit()
 
 
 async def get_fetched_jobs(
@@ -67,7 +86,7 @@ async def get_fetched_jobs(
         if from_date:
             stmt = stmt.where(
                 Job.created_at
-                >= datetime.combine(from_date, datetime.min.time(), tzinfo=timezone.utc)
+                >= datetime.combine(from_date, datetime.min.time(), tzinfo=settings.tz)
             )
         if to_date:
             stmt = stmt.where(
@@ -75,7 +94,7 @@ async def get_fetched_jobs(
                 < datetime.combine(
                     to_date + timedelta(days=1),
                     datetime.min.time(),
-                    tzinfo=timezone.utc,
+                    tzinfo=settings.tz,
                 )
             )
         return list((await session.execute(stmt)).scalars().all())

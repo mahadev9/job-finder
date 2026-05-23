@@ -26,6 +26,10 @@ _ENSURE_INDEXES = [
     "CREATE INDEX IF NOT EXISTS ix_matched_jobs_score_desc ON matched_jobs (score)",
 ]
 
+_MIGRATIONS = [
+    "ALTER TABLE jobs ADD COLUMN pipeline_ran BOOLEAN NOT NULL DEFAULT 0",
+]
+
 
 async def init_db() -> None:
     await aiofiles.os.makedirs(
@@ -35,4 +39,9 @@ async def init_db() -> None:
         await conn.run_sync(Base.metadata.create_all)
         for stmt in _ENSURE_INDEXES:
             await conn.execute(text(stmt))
+        for stmt in _MIGRATIONS:
+            try:
+                await conn.execute(text(stmt))
+            except Exception:
+                pass  # column already exists
         logger.debug("Database indexes verified")

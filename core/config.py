@@ -1,4 +1,5 @@
 import os
+from zoneinfo import ZoneInfo
 
 from langchain.chat_models import BaseChatModel
 from langchain_anthropic import ChatAnthropic
@@ -51,6 +52,10 @@ class Settings(BaseSettings):
     DEFAULT_TEMPERATURE: float = Field(
         0.7,
         description="The default temperature for language model responses. Higher values (e.g., 0.9) make output more random, while lower values (e.g., 0.2) make it more focused and deterministic.",
+    )
+    APP_TIMEZONE: str = Field(
+        default="America/New_York",
+        description="IANA timezone name used for all datetime storage and date-range queries (e.g. 'America/New_York', 'America/Chicago', 'America/Los_Angeles').",
     )
 
     @model_validator(mode="after")
@@ -124,6 +129,10 @@ class Settings(BaseSettings):
                 thinking_level="medium",
                 api_key=self.GEMINI_API_KEY.get_secret_value(),
             )
+
+    @property
+    def tz(self) -> ZoneInfo:
+        return ZoneInfo(self.APP_TIMEZONE)
 
     @property
     def DB_PATH(self) -> str:

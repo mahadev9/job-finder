@@ -1,7 +1,21 @@
-from datetime import date, datetime, timezone
+import logging
+from datetime import date, datetime
 
 import reflex as rx
 from pydantic import BaseModel
+
+from core.config import settings
+from core.logger import bootstrap_logging
+from database.core import init_db
+from database.models.matched_jobs import JobStatus
+from services.fetch_jobs import fetch_from_company, fetch_from_query, iter_fetch_steps
+from services.match_jobs import run_match_pipeline
+from services.queries import (
+    bulk_update_matched_job_status,
+    get_fetched_jobs,
+    get_matched_jobs,
+    get_new_jobs_since,
+)
 
 
 STATUS_COLORS: dict[str, str] = {
@@ -47,6 +61,8 @@ class FetchedJobRow(BaseModel):
     link: str
     portal: str
     fetched_date: str
+    fetched_ts: float = 0.0
+    pipeline_ran: bool = False
 
 
 def _score_color(score: float) -> str:
@@ -81,6 +97,8 @@ def _to_fetched_row(j) -> FetchedJobRow:
         link=j.link,
         portal=j.portal,
         fetched_date=j.created_at.strftime("%b %d, %Y") if j.created_at else "",
+        fetched_ts=j.created_at.timestamp() if j.created_at else 0.0,
+        pipeline_ran=j.pipeline_ran,
     )
 
 
@@ -95,13 +113,27 @@ class AppState(rx.State):
 
     # Matched jobs filters
     status_filter: str = "all"
+    company_filter: str = "all"
     from_date: str = ""
     to_date: str = ""
     match_date: str = ""
+    match_batch_size: int = 5
+
+    # Match pipeline options
+    match_companies: list[str] = []
+
+    # Matched jobs sort
+    jobs_sort_col: str = "score"
+    jobs_sort_asc: bool = False
 
     # Fetched jobs filters
+    fetched_company_filter: str = "all"
     fetched_from_date: str = ""
     fetched_to_date: str = ""
+
+    # Fetched jobs sort
+    fetched_sort_col: str = "fetched_ts"
+    fetched_sort_asc: bool = False
 
     # Tables
     jobs: list[JobRow] = []
@@ -110,7 +142,7 @@ class AppState(rx.State):
     # Pagination
     jobs_page: int = 0
     fetched_page: int = 0
-    page_size: int = 20
+    page_size: int = 10
 
     # Computed vars
 
@@ -157,17 +189,42 @@ class AppState(rx.State):
         return str(self.page_size)
 
     @rx.var
+    def match_batch_size_str(self) -> str:
+        return str(self.match_batch_size)
+
+    @rx.var
+    def match_companies_label(self) -> str:
+        n = len(self.match_companies)
+        if n == 0:
+            return "All Companies"
+        if n == 1:
+            return self.match_companies[0]
+        return f"{n} companies"
+
+    @rx.var
+    def distinct_companies(self) -> list[str]:
+        return sorted({j.company for j in self.jobs})
+
+    @rx.var
+    def display_jobs(self) -> list[JobRow]:
+        if self.company_filter == "all":
+            return self.jobs
+        return [j for j in self.jobs if j.company == self.company_filter]
+
+    @rx.var
     def jobs_page_items(self) -> list[JobRow]:
+        col, asc = self.jobs_sort_col, self.jobs_sort_asc
+        jobs = sorted(self.display_jobs, key=lambda j: getattr(j, col), reverse=not asc)
         start = self.jobs_page * self.page_size
-        return self.jobs[start : start + self.page_size]
+        return jobs[start : start + self.page_size]
 
     @rx.var
     def jobs_page_count(self) -> int:
-        return max(1, (len(self.jobs) + self.page_size - 1) // self.page_size)
+        return max(1, (len(self.display_jobs) + self.page_size - 1) // self.page_size)
 
     @rx.var
     def jobs_range_label(self) -> str:
-        total = len(self.jobs)
+        total = len(self.display_jobs)
         if total == 0:
             return "0 jobs"
         start = self.jobs_page * self.page_size + 1
@@ -175,17 +232,35 @@ class AppState(rx.State):
         return f"{start}–{end} of {total}"
 
     @rx.var
+    def distinct_fetched_companies(self) -> list[str]:
+        return sorted({j.company for j in self.fetched_jobs})
+
+    @rx.var
+    def display_fetched_jobs(self) -> list[FetchedJobRow]:
+        if self.fetched_company_filter == "all":
+            return self.fetched_jobs
+        return [
+            j for j in self.fetched_jobs if j.company == self.fetched_company_filter
+        ]
+
+    @rx.var
     def fetched_page_items(self) -> list[FetchedJobRow]:
+        col, asc = self.fetched_sort_col, self.fetched_sort_asc
+        jobs = sorted(
+            self.display_fetched_jobs, key=lambda j: getattr(j, col), reverse=not asc
+        )
         start = self.fetched_page * self.page_size
-        return self.fetched_jobs[start : start + self.page_size]
+        return jobs[start : start + self.page_size]
 
     @rx.var
     def fetched_page_count(self) -> int:
-        return max(1, (len(self.fetched_jobs) + self.page_size - 1) // self.page_size)
+        return max(
+            1, (len(self.display_fetched_jobs) + self.page_size - 1) // self.page_size
+        )
 
     @rx.var
     def fetched_range_label(self) -> str:
-        total = len(self.fetched_jobs)
+        total = len(self.display_fetched_jobs)
         if total == 0:
             return "0 jobs"
         start = self.fetched_page * self.page_size + 1
@@ -195,9 +270,6 @@ class AppState(rx.State):
     # Lifecycle
 
     async def on_load(self):
-        from core.logger import bootstrap_logging
-        from database.core import init_db
-
         bootstrap_logging()
         await init_db()
         self.match_date = str(date.today())
@@ -207,13 +279,9 @@ class AppState(rx.State):
     # Matched jobs data
 
     async def load_jobs(self):
-        from datetime import date as _date
-
-        from services.queries import get_matched_jobs
-
         status = self.status_filter if self.status_filter != "all" else None
-        from_d = _date.fromisoformat(self.from_date) if self.from_date else None
-        to_d = _date.fromisoformat(self.to_date) if self.to_date else None
+        from_d = date.fromisoformat(self.from_date) if self.from_date else None
+        to_d = date.fromisoformat(self.to_date) if self.to_date else None
 
         db_jobs = await get_matched_jobs(status, from_d, to_d)
         self.jobs = [_to_row(j) for j in db_jobs]
@@ -221,23 +289,39 @@ class AppState(rx.State):
 
     async def set_status_filter(self, value: str):
         self.status_filter = value
+        self.company_filter = "all"
         await self.load_jobs()
+
+    def set_company_filter(self, value: str):
+        self.company_filter = value
+        self.jobs_page = 0
 
     async def set_from_date(self, value: str):
         self.from_date = value
+        self.company_filter = "all"
         await self.load_jobs()
 
     async def set_to_date(self, value: str):
         self.to_date = value
+        self.company_filter = "all"
         await self.load_jobs()
 
     def set_match_date(self, value: str):
         self.match_date = value
 
-    async def update_job_status(self, job_id: int, status: str):
-        from database.models.matched_jobs import JobStatus
-        from services.queries import bulk_update_matched_job_status
+    def set_match_batch_size(self, value: str):
+        self.match_batch_size = int(value)
 
+    def toggle_match_company(self, company: str, checked: bool):
+        if checked and company not in self.match_companies:
+            self.match_companies = [*self.match_companies, company]
+        elif not checked:
+            self.match_companies = [c for c in self.match_companies if c != company]
+
+    def set_match_companies(self, value: list[str]):
+        self.match_companies = value
+
+    async def update_job_status(self, job_id: int, status: str):
         await bulk_update_matched_job_status({job_id: JobStatus(status)})
         self.jobs = [
             JobRow(
@@ -263,29 +347,31 @@ class AppState(rx.State):
     # Fetched jobs data
 
     async def load_fetched_jobs(self):
-        from datetime import date as _date
-
-        from services.queries import get_fetched_jobs
-
         from_d = (
-            _date.fromisoformat(self.fetched_from_date)
+            date.fromisoformat(self.fetched_from_date)
             if self.fetched_from_date
             else None
         )
         to_d = (
-            _date.fromisoformat(self.fetched_to_date) if self.fetched_to_date else None
+            date.fromisoformat(self.fetched_to_date) if self.fetched_to_date else None
         )
 
         jobs = await get_fetched_jobs(from_d, to_d)
         self.fetched_jobs = [_to_fetched_row(j) for j in jobs]
         self.fetched_page = 0
 
+    def set_fetched_company_filter(self, value: str):
+        self.fetched_company_filter = value
+        self.fetched_page = 0
+
     async def set_fetched_from_date(self, value: str):
         self.fetched_from_date = value
+        self.fetched_company_filter = "all"
         await self.load_fetched_jobs()
 
     async def set_fetched_to_date(self, value: str):
         self.fetched_to_date = value
+        self.fetched_company_filter = "all"
         await self.load_fetched_jobs()
 
     def jobs_prev_page(self):
@@ -305,6 +391,22 @@ class AppState(rx.State):
         self.jobs_page = 0
         self.fetched_page = 0
 
+    def sort_jobs(self, col: str):
+        if self.jobs_sort_col == col:
+            self.jobs_sort_asc = not self.jobs_sort_asc
+        else:
+            self.jobs_sort_col = col
+            self.jobs_sort_asc = col == "company" or col == "status"
+        self.jobs_page = 0
+
+    def sort_fetched(self, col: str):
+        if self.fetched_sort_col == col:
+            self.fetched_sort_asc = not self.fetched_sort_asc
+        else:
+            self.fetched_sort_col = col
+            self.fetched_sort_asc = col == "company"
+        self.fetched_page = 0
+
     def dismiss_result(self):
         self.result_message = ""
         self.result_kind = ""
@@ -313,18 +415,9 @@ class AppState(rx.State):
 
     @rx.event(background=True)
     async def run_fetch(self):
-        import logging
-
-        from services.fetch_jobs import (
-            fetch_from_company,
-            fetch_from_query,
-            iter_fetch_steps,
-        )
-        from services.queries import get_fetched_jobs, get_new_jobs_since
-
         logger = logging.getLogger("job-finder")
         steps = [s async for s in iter_fetch_steps()]
-        fetch_start = datetime.now(timezone.utc)
+        fetch_start = datetime.now(settings.tz)
 
         async with self:
             self.running = "fetch"
@@ -382,17 +475,13 @@ class AppState(rx.State):
 
     @rx.event(background=True)
     async def run_match(self):
-        import logging
-        from datetime import date as _date
-
-        from services.match_jobs import run_match_pipeline
-        from services.queries import get_matched_jobs
-
         logger = logging.getLogger("job-finder")
 
         try:
             async with self:
                 match_date_str = self.match_date
+                match_batch_size = self.match_batch_size
+                match_companies = list(self.match_companies)
                 status_filter = self.status_filter
                 from_date_str = self.from_date
                 to_date_str = self.to_date
@@ -403,7 +492,7 @@ class AppState(rx.State):
                 self.result_kind = ""
 
             _match_date = (
-                _date.fromisoformat(match_date_str) if match_date_str else _date.today()
+                date.fromisoformat(match_date_str) if match_date_str else date.today()
             )
 
             async def _on_batch(batch_num: int, total_batches: int) -> None:
@@ -412,7 +501,10 @@ class AppState(rx.State):
                     self.status_text = f"Matching batch {batch_num}/{total_batches}…"
 
             count = await run_match_pipeline(
-                progress_callback=_on_batch, for_date=_match_date
+                progress_callback=_on_batch,
+                for_date=_match_date,
+                batch_size=match_batch_size,
+                companies=match_companies or None,
             )
 
             if count == 0:
@@ -430,11 +522,13 @@ class AppState(rx.State):
                     self.result_message = f"Match complete — evaluated {count} job(s)."
 
             status = status_filter if status_filter != "all" else None
-            from_d = _date.fromisoformat(from_date_str) if from_date_str else None
-            to_d = _date.fromisoformat(to_date_str) if to_date_str else None
+            from_d = date.fromisoformat(from_date_str) if from_date_str else None
+            to_d = date.fromisoformat(to_date_str) if to_date_str else None
             db_jobs = await get_matched_jobs(status, from_d, to_d)
+            fetched = await get_fetched_jobs()
             async with self:
                 self.jobs = [_to_row(j) for j in db_jobs]
+                self.fetched_jobs = [_to_fetched_row(j) for j in fetched]
 
         except Exception as exc:
             logger.exception("Match pipeline failed")

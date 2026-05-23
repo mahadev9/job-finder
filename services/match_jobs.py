@@ -7,7 +7,7 @@ import aiofiles
 from database.models.jobs import Job
 from services.llm_agent import invoke_agent
 from services.prompt_config import build_match_system_prompt
-from services.queries import get_jobs_for_date
+from services.queries import get_jobs_for_date, mark_jobs_matched
 
 logger = logging.getLogger("job-finder")
 
@@ -47,9 +47,12 @@ def _build_match_prompt(jobs: list[Job]) -> str:
 
 
 async def run_match_pipeline(
-    progress_callback=None, for_date: date | None = None
+    progress_callback=None,
+    for_date: date | None = None,
+    batch_size: int = _BATCH_SIZE,
+    companies: list[str] | None = None,
 ) -> int:
-    jobs = await get_jobs_for_date(for_date or date.today())
+    jobs = await get_jobs_for_date(for_date or date.today(), companies=companies)
     if not jobs:
         logger.info("No jobs found for today — skipping match pipeline")
         return 0
@@ -58,15 +61,16 @@ async def run_match_pipeline(
     profile, cv = await _load_templates()
     system_prompt = build_match_system_prompt(profile, cv)
 
-    total_batches = -(-len(jobs) // _BATCH_SIZE)
-    for i in range(0, len(jobs), _BATCH_SIZE):
-        batch = jobs[i : i + _BATCH_SIZE]
-        batch_num = i // _BATCH_SIZE + 1
+    total_batches = -(-len(jobs) // batch_size)
+    for i in range(0, len(jobs), batch_size):
+        batch = jobs[i : i + batch_size]
+        batch_num = i // batch_size + 1
         logger.info(f"Matching batch {batch_num}/{total_batches} ({len(batch)} jobs)")
         if progress_callback:
             await progress_callback(batch_num, total_batches)
         await invoke_agent(_build_match_prompt(batch), system_prompt)
         logger.info(f"Batch {batch_num}/{total_batches} complete")
 
+    await mark_jobs_matched([j.id for j in jobs])
     logger.info(f"Match pipeline complete: evaluated {len(jobs)} job(s)")
     return len(jobs)

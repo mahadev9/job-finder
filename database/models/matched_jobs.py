@@ -1,9 +1,10 @@
 import enum
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlalchemy import DateTime, Enum, Float, Index, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
+from core.config import settings
 from database.models.base import Base
 
 
@@ -33,7 +34,7 @@ class MatchedJob(Base):
     reason: Mapped[str] = mapped_column(String, nullable=False, default="")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(settings.tz),
     )
 
     __table_args__ = (

@@ -17,6 +17,33 @@ _DATE_INPUT_STYLE: dict = {
 }
 
 
+def sort_header(
+    label: str,
+    col: str,
+    sort_col_var,
+    sort_asc_var,
+    on_sort,
+) -> rx.Component:
+    return rx.table.column_header_cell(
+        rx.hstack(
+            rx.text(label, size="2", weight="medium"),
+            rx.cond(
+                sort_col_var == col,
+                rx.cond(
+                    sort_asc_var,
+                    rx.icon("chevron-up", size=11),
+                    rx.icon("chevron-down", size=11),
+                ),
+                rx.icon("chevrons-up-down", size=11, color="var(--gray-6)"),
+            ),
+            spacing="1",
+            align="center",
+            cursor="pointer",
+            on_click=on_sort,
+        )
+    )
+
+
 def date_input(
     value: Any,
     on_change: Any,
@@ -172,15 +199,81 @@ def match_card() -> rx.Component:
                 color_scheme="gray",
             ),
             rx.hstack(
-                rx.vstack(
-                    rx.text("For date", size="1", color_scheme="gray"),
-                    date_input(
-                        AppState.match_date,
-                        AppState.set_match_date,
-                        AppState.is_running,
+                rx.hstack(
+                    rx.vstack(
+                        rx.text("For date", size="1", color_scheme="gray"),
+                        date_input(
+                            AppState.match_date,
+                            AppState.set_match_date,
+                            AppState.is_running,
+                        ),
+                        spacing="1",
+                        align="start",
                     ),
-                    spacing="1",
-                    align="start",
+                    rx.vstack(
+                        rx.text("Batch", size="1", color_scheme="gray"),
+                        rx.select.root(
+                            rx.select.trigger(size="1"),
+                            rx.select.content(
+                                rx.select.item("5", value="5"),
+                                rx.select.item("10", value="10"),
+                                rx.select.item("15", value="15"),
+                                rx.select.item("20", value="20"),
+                            ),
+                            value=AppState.match_batch_size_str,
+                            on_change=AppState.set_match_batch_size,
+                            disabled=AppState.is_running,
+                        ),
+                        spacing="1",
+                        align="start",
+                    ),
+                    rx.vstack(
+                        rx.text("Companies", size="1", color_scheme="gray"),
+                        rx.popover.root(
+                            rx.popover.trigger(
+                                rx.button(
+                                    AppState.match_companies_label,
+                                    rx.icon("chevron-down", size=12),
+                                    variant="surface",
+                                    size="2",
+                                    min_width="160px",
+                                    justify="between",
+                                    disabled=AppState.is_running,
+                                )
+                            ),
+                            rx.popover.content(
+                                rx.scroll_area(
+                                    rx.vstack(
+                                        rx.foreach(
+                                            AppState.distinct_fetched_companies,
+                                            lambda c: rx.checkbox(
+                                                c,
+                                                checked=AppState.match_companies.contains(
+                                                    c
+                                                ),
+                                                on_change=AppState.toggle_match_company(
+                                                    c
+                                                ),
+                                                size="2",
+                                            ),
+                                        ),
+                                        align="start",
+                                        spacing="2",
+                                        min_width="180px",
+                                        padding_right="8px",
+                                    ),
+                                    max_height="200px",
+                                    type="auto",
+                                ),
+                                side="bottom",
+                                align="start",
+                            ),
+                        ),
+                        spacing="1",
+                        align="start",
+                    ),
+                    spacing="2",
+                    align="end",
                 ),
                 rx.spacer(),
                 rx.button(
@@ -387,6 +480,25 @@ def fetched_job_row(job: Any) -> rx.Component:
             min_width="100px",
         ),
         rx.table.cell(
+            rx.cond(
+                job.pipeline_ran,
+                rx.badge(
+                    rx.icon("check", size=10),
+                    "Ran",
+                    variant="soft",
+                    color_scheme="green",
+                    size="1",
+                ),
+                rx.badge(
+                    "Pending",
+                    variant="soft",
+                    color_scheme="gray",
+                    size="1",
+                ),
+            ),
+            min_width="80px",
+        ),
+        rx.table.cell(
             rx.link(
                 rx.hstack(rx.icon("external_link", size=12), "Open", spacing="1"),
                 href=job.link,
@@ -411,6 +523,18 @@ def fetched_jobs_section() -> rx.Component:
             ),
             rx.spacer(),
             rx.hstack(
+                rx.select.root(
+                    rx.select.trigger(placeholder="All Companies", size="2"),
+                    rx.select.content(
+                        rx.select.item("All Companies", value="all"),
+                        rx.foreach(
+                            AppState.distinct_fetched_companies,
+                            lambda c: rx.select.item(c, value=c),
+                        ),
+                    ),
+                    value=AppState.fetched_company_filter,
+                    on_change=AppState.set_fetched_company_filter,
+                ),
                 rx.vstack(
                     rx.text("From", size="1", color_scheme="gray"),
                     date_input(
@@ -463,10 +587,23 @@ def fetched_jobs_section() -> rx.Component:
             rx.table.root(
                 rx.table.header(
                     rx.table.row(
-                        rx.table.column_header_cell("Company"),
+                        sort_header(
+                            "Company",
+                            "company",
+                            AppState.fetched_sort_col,
+                            AppState.fetched_sort_asc,
+                            AppState.sort_fetched("company"),
+                        ),
                         rx.table.column_header_cell("Role"),
                         rx.table.column_header_cell("Portal"),
-                        rx.table.column_header_cell("Fetched"),
+                        sort_header(
+                            "Fetched",
+                            "fetched_ts",
+                            AppState.fetched_sort_col,
+                            AppState.fetched_sort_asc,
+                            AppState.sort_fetched("fetched_ts"),
+                        ),
+                        rx.table.column_header_cell("Pipeline"),
                         rx.table.column_header_cell(""),
                     ),
                 ),
@@ -566,6 +703,18 @@ def jobs_section() -> rx.Component:
             rx.spacer(),
             rx.hstack(
                 rx.select.root(
+                    rx.select.trigger(placeholder="All Companies", size="2"),
+                    rx.select.content(
+                        rx.select.item("All Companies", value="all"),
+                        rx.foreach(
+                            AppState.distinct_companies,
+                            lambda c: rx.select.item(c, value=c),
+                        ),
+                    ),
+                    value=AppState.company_filter,
+                    on_change=AppState.set_company_filter,
+                ),
+                rx.select.root(
                     rx.select.trigger(placeholder="All Statuses", size="2"),
                     rx.select.content(
                         rx.select.item("All Statuses", value="all"),
@@ -630,10 +779,28 @@ def jobs_section() -> rx.Component:
             rx.table.root(
                 rx.table.header(
                     rx.table.row(
-                        rx.table.column_header_cell("Company"),
+                        sort_header(
+                            "Company",
+                            "company",
+                            AppState.jobs_sort_col,
+                            AppState.jobs_sort_asc,
+                            AppState.sort_jobs("company"),
+                        ),
                         rx.table.column_header_cell("Role"),
-                        rx.table.column_header_cell("Score"),
-                        rx.table.column_header_cell("Status"),
+                        sort_header(
+                            "Score",
+                            "score",
+                            AppState.jobs_sort_col,
+                            AppState.jobs_sort_asc,
+                            AppState.sort_jobs("score"),
+                        ),
+                        sort_header(
+                            "Status",
+                            "status",
+                            AppState.jobs_sort_col,
+                            AppState.jobs_sort_asc,
+                            AppState.sort_jobs("status"),
+                        ),
                     ),
                 ),
                 rx.table.body(
