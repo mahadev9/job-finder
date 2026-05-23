@@ -683,6 +683,7 @@ def job_row(job: Any) -> rx.Component:
                 ),
                 rx.select.content(
                     rx.select.item("Pending", value="pending"),
+                    rx.select.item("Interested", value="interested"),
                     rx.select.item("Applied", value="applied"),
                     rx.select.item("Rejected", value="rejected"),
                     rx.select.item("Low Match", value="low_match"),
@@ -733,6 +734,7 @@ def jobs_section() -> rx.Component:
                     rx.select.content(
                         rx.select.item("All Statuses", value="all"),
                         rx.select.item("Pending", value="pending"),
+                        rx.select.item("Interested", value="interested"),
                         rx.select.item("Applied", value="applied"),
                         rx.select.item("Rejected", value="rejected"),
                         rx.select.item("Low Match", value="low_match"),

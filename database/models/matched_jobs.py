@@ -10,6 +10,7 @@ from database.models.base import Base
 
 class JobStatus(str, enum.Enum):
     PENDING = "pending"
+    INTERESTED = "interested"
     APPLIED = "applied"
     REJECTED = "rejected"
     LOW_MATCH = "low_match"

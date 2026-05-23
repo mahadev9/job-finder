@@ -20,6 +20,7 @@ from services.queries import (
 
 STATUS_COLORS: dict[str, str] = {
     "pending": "amber",
+    "interested": "violet",
     "applied": "blue",
     "rejected": "red",
     "low_match": "gray",
@@ -27,6 +28,7 @@ STATUS_COLORS: dict[str, str] = {
 
 STATUS_LABELS: dict[str, str] = {
     "pending": "Pending",
+    "interested": "Interested",
     "applied": "Applied",
     "rejected": "Rejected",
     "low_match": "Low Match",
@@ -328,29 +330,23 @@ class AppState(rx.State):
     async def update_job_status(self, job_id: int, status: str):
         await bulk_update_matched_job_status({job_id: JobStatus(status)})
         now_str = datetime.now(settings.tz).strftime("%b %d, %Y")
-        self.jobs = [
-            JobRow(
-                id=j.id,
-                company=j.company,
-                role=j.role,
-                role_link=j.role_link,
-                score=j.score,
-                score_label=j.score_label,
-                score_color=j.score_color,
-                status=status if j.id == job_id else j.status,
-                status_label=STATUS_LABELS.get(status, status)
-                if j.id == job_id
-                else j.status_label,
-                status_color=STATUS_COLORS.get(status, "gray")
-                if j.id == job_id
-                else j.status_color,
-                reason=j.reason,
-                status_changed_at=(
-                    "" if status == "pending" else now_str
-                ) if j.id == job_id else j.status_changed_at,
-            )
-            for j in self.jobs
-        ]
+        for i, j in enumerate(self.jobs):
+            if j.id == job_id:
+                self.jobs[i] = JobRow(
+                    id=j.id,
+                    company=j.company,
+                    role=j.role,
+                    role_link=j.role_link,
+                    score=j.score,
+                    score_label=j.score_label,
+                    score_color=j.score_color,
+                    status=status,
+                    status_label=STATUS_LABELS.get(status, status),
+                    status_color=STATUS_COLORS.get(status, "gray"),
+                    reason=j.reason,
+                    status_changed_at="" if status == "pending" else now_str,
+                )
+                break
 
     # Fetched jobs data
 
