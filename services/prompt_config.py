@@ -81,9 +81,13 @@ Be STRICT — a perfect 10 means an ideal match in every dimension. Reserve 8+ f
 - Generic backend (FastAPI, Go, Java) with no AI/ML signal → 0.4-1.0
 
 ### Seniority (0-2)
-- Senior IC, Staff, Principal, Lead, L4/L5/L6 equivalent → 1.6-2.0
-- Mid-level (2-5 yrs), no seniority stated → 1.0-1.5
-- Junior, Associate, Entry-level, Intern → 0.0-0.5 (usually skip)
+Candidate has ~4 years of total professional experience (2 yrs SWE at Optum + ~2 yrs AI/ML at Fulcrum/research). Sweet spot is mid-to-senior IC at startups and scale-ups.
+
+- "Senior" AI/ML/SWE at startup or scale-up, or any JD requiring 3-6 yrs → 1.7-2.0 (true fit)
+- "Mid-level", no level stated, or JD requiring 2-5 yrs → 1.3-1.7 (solid fit)
+- "Senior" at BigTech / large enterprise where 5-8 yrs is implied → 0.8-1.2 (reach — penalise)
+- "Staff", "Principal", "Lead" at any established company → 0.3-0.7 (overleveled — likely screened out)
+- "Junior", "Associate", "Entry-level", "Intern" → 0.0-0.2 (overqualified — skip)
 
 ### Location (0-1)
 - NYC / hybrid OR US remote / anywhere in US → 1.0
@@ -98,16 +102,17 @@ Be STRICT — a perfect 10 means an ideal match in every dimension. Reserve 8+ f
 
 ## Scored examples
 
-**Example A — Strong match (score: 8.5)**
+**Example A — Strong match (score: 9.4)**
 Job: Senior AI Engineer at Scale AI | LangChain, RAG, AWS Bedrock, NYC hybrid
 - Role alignment: 3.8 (AI Engineer, exact archetype)
 - Tech stack: 2.7 (LangChain + RAG + Bedrock = direct match)
-- Seniority: 1.9 (Senior IC)
+- Seniority: 1.9 (Senior AI at scale-up — 3-6 yr expectation, fits 4 YOE perfectly)
 - Location: 1.0 (NYC hybrid)
 - Total: 9.4 → save with status="pending"
 save_matched_job(company="Scale AI", role="Senior AI Engineer", score=9.4,
   role_link="<url>", reason="Exact archetype match. LangChain/RAG/Bedrock stack mirrors
-  candidate's Fulcrum Digital work precisely. NYC hybrid removes all location friction.",
+  candidate's Fulcrum Digital work precisely. Scale-up 'Senior' aligns with 4 YOE sweet spot.
+  NYC hybrid removes all location friction.",
   status="pending")
 
 **Example B — Decent match (score: 6.1)**
@@ -134,7 +139,20 @@ save_matched_job(company="FinTechCo", role="Software Engineer", score=4.4,
   Location fits but the stack is entirely outside candidate's expertise. Low priority.",
   status="low_match")
 
-**Example D — Low match (score: 1.0)**
+**Example D — Seniority reach (score: 5.8)**
+Job: Senior ML Engineer at Google DeepMind | TensorFlow, JAX, LLM research, US remote
+- Role alignment: 3.5 (ML Engineer, strong archetype)
+- Tech stack: 2.0 (PyTorch/HuggingFace adjacent but JAX-heavy; not a direct stack match)
+- Seniority: 0.9 (Google L5 "Senior" typically implies 5-8 yrs; 4 YOE is a reach)
+- Location: 1.0 (US remote)
+- Total: 7.4 → save with status="pending"
+save_matched_job(company="Google DeepMind", role="Senior ML Engineer", score=7.4,
+  role_link="<url>", reason="Strong archetype and location fit. Stack is adjacent but JAX-centric
+  rather than candidate's PyTorch/LangGraph core. BigTech L5 seniority bar (5-8 yrs) makes
+  this a meaningful reach at 4 YOE — scored conservatively on seniority.",
+  status="pending")
+
+**Example E — Low match (score: 1.0)**
 Job: Product Manager at Meta | roadmap, stakeholder management, MBA preferred
 - Role alignment: 0.0 (non-technical PM role)
 - Total: ~1.0 → score < 5.0 → save with status="low_match"
@@ -142,6 +160,19 @@ save_matched_job(company="Meta", role="Product Manager", score=1.0,
   role_link="<url>", reason="Non-technical PM role with no engineering component.
   Role alignment is zero; saved as low_match for record-keeping.",
   status="low_match")
+
+**Example F — Overqualified (score: 3.5)**
+Job: Junior AI Engineer at FinTechStartup | Python, ML, LangChain, US remote
+- Role alignment: 3.5 (AI Engineer archetype)
+- Tech stack: 2.0 (LangChain match)
+- Seniority: 0.1 (Junior/entry-level — candidate is overqualified at 4 YOE)
+- Location: 1.0 (US remote)
+- Total: 6.6 → save with status="pending"
+save_matched_job(company="FinTechStartup", role="Junior AI Engineer", score=6.6,
+  role_link="<url>", reason="Good archetype and stack fit, but explicitly junior-leveled role.
+  Candidate with 4 YOE is overqualified — likely underpaid and under-challenged. Seniority
+  scored near zero; included for completeness but low priority.",
+  status="pending")
 
 ## Instructions
 
