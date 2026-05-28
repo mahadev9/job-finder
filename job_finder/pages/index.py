@@ -357,8 +357,6 @@ def match_card() -> rx.Component:
                                 rx.select.item("2", value="2"),
                                 rx.select.item("5", value="5"),
                                 rx.select.item("10", value="10"),
-                                rx.select.item("15", value="15"),
-                                rx.select.item("20", value="20"),
                             ),
                             value=AppState.match_batch_size_str,
                             on_change=AppState.set_match_batch_size,
