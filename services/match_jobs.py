@@ -59,7 +59,8 @@ async def run_match_pipeline(
 
     logger.info(f"Running match pipeline on {len(jobs)} job(s)")
     profile, cv = await _load_templates()
-    system_prompt = build_match_system_prompt(profile, cv)
+    today = (for_date or date.today()).strftime("%B %d, %Y")
+    system_prompt = build_match_system_prompt(profile, cv, today)
 
     total_batches = -(-len(jobs) // batch_size)
     for i in range(0, len(jobs), batch_size):

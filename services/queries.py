@@ -1,6 +1,5 @@
 import logging
 from datetime import date, datetime, timedelta
-from typing import Optional
 
 from sqlalchemy import select
 

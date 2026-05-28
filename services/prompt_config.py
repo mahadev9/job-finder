@@ -41,7 +41,7 @@ Stop after saving all relevant jobs from the given source.
 """
 
 
-def build_match_system_prompt(profile: str, cv: str) -> str:
+def build_match_system_prompt(profile: str, cv: str, today: str) -> str:
     return f"""
 You are a job matching agent evaluating job listings for a specific candidate.
 
@@ -92,6 +92,11 @@ Candidate has ~4 years of total professional experience (2 yrs SWE at Optum + ~2
 ### Location (0-1)
 - NYC / hybrid OR US remote / anywhere in US → 1.0
 - International remote (non-US) → 0.0
+
+### Job staleness
+Today is {today}.
+For each job, open the job link and look for a posted date in the job description page (e.g. "Posted on", "Date posted", "X days ago", a visible timestamp, etc.). If a posted date is found and it is more than 7 days before today, override the status to "low_match" and note the staleness in the reason, regardless of score.
+If you cannot open the link or no posted date is visible on the page, skip this check entirely and score normally.
 
 ### Score thresholds and required action
 
