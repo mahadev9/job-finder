@@ -19,6 +19,7 @@ from services.fetch_jobs import (
 from services.match_jobs import run_match_pipeline
 from services.queries import (
     bulk_update_matched_job_status,
+    get_distinct_token_usage_models,
     get_fetched_jobs,
     get_matched_jobs,
     get_new_jobs_since,
@@ -785,6 +786,8 @@ class UsageState(rx.State):
     usage_total_tokens: int = 0
     usage_total_reasoning: int = 0
     usage_pipeline_filter: str = "all"
+    usage_model_filter: str = "all"
+    usage_available_models: list[str] = []
     usage_from_date: str = ""
     usage_to_date: str = ""
 
@@ -818,10 +821,12 @@ class UsageState(rx.State):
 
     async def _load(self) -> None:
         pipeline = self.usage_pipeline_filter if self.usage_pipeline_filter != "all" else None
+        model = self.usage_model_filter if self.usage_model_filter != "all" else None
         from_d = date.fromisoformat(self.usage_from_date) if self.usage_from_date else None
         to_d = date.fromisoformat(self.usage_to_date) if self.usage_to_date else None
         rows, total, agg = await get_token_usage_page(
             pipeline=pipeline,
+            model=model,
             from_date=from_d,
             to_date=to_d,
             offset=self.usage_page * self.usage_page_size,
@@ -849,10 +854,16 @@ class UsageState(rx.State):
 
     async def on_load(self) -> None:
         self.usage_page = 0
+        self.usage_available_models = await get_distinct_token_usage_models()
         await self._load()
 
     async def set_usage_pipeline_filter(self, value: str) -> None:
         self.usage_pipeline_filter = value
+        self.usage_page = 0
+        await self._load()
+
+    async def set_usage_model_filter(self, value: str) -> None:
+        self.usage_model_filter = value
         self.usage_page = 0
         await self._load()
 

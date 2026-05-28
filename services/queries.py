@@ -100,8 +100,16 @@ async def get_fetched_jobs(
         return list((await session.execute(stmt)).scalars().all())
 
 
+async def get_distinct_token_usage_models() -> list[str]:
+    async with SessionLocal() as session:
+        stmt = select(TokenUsage.model).distinct().order_by(TokenUsage.model)
+        result = await session.execute(stmt)
+        return [row[0] for row in result.all() if row[0]]
+
+
 async def get_token_usage_page(
     pipeline: str | None = None,
+    model: str | None = None,
     from_date: date | None = None,
     to_date: date | None = None,
     offset: int = 0,
@@ -111,6 +119,8 @@ async def get_token_usage_page(
         conditions = []
         if pipeline:
             conditions.append(TokenUsage.pipeline == pipeline)
+        if model:
+            conditions.append(TokenUsage.model == model)
         if from_date:
             conditions.append(
                 TokenUsage.created_at

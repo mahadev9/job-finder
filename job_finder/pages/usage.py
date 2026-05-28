@@ -151,6 +151,20 @@ def usage() -> rx.Component:
                             value=UsageState.usage_pipeline_filter,
                             on_change=UsageState.set_usage_pipeline_filter,
                         ),
+                        rx.select.root(
+                            rx.select.trigger(
+                                placeholder="All Models", size="2"
+                            ),
+                            rx.select.content(
+                                rx.select.item("All Models", value="all"),
+                                rx.foreach(
+                                    UsageState.usage_available_models,
+                                    lambda m: rx.select.item(m, value=m),
+                                ),
+                            ),
+                            value=UsageState.usage_model_filter,
+                            on_change=UsageState.set_usage_model_filter,
+                        ),
                         rx.vstack(
                             rx.text("From", size="1", color_scheme="gray"),
                             rx.el.input(
