@@ -366,7 +366,7 @@ class AppState(rx.State):
     async def on_load(self):
         bootstrap_logging()
         await init_db()
-        self.match_date = str(date.today())
+        self.match_date = str(datetime.now(settings.tz).date())
         self.fetch_available_companies = [
             c["name"] for c in await get_enabled_companies()
         ]
@@ -649,7 +649,7 @@ class AppState(rx.State):
                 self.result_kind = ""
 
             _match_date = (
-                date.fromisoformat(match_date_str) if match_date_str else date.today()
+                date.fromisoformat(match_date_str) if match_date_str else datetime.now(settings.tz).date()
             )
 
             async def _on_batch(batch_num: int, total_batches: int) -> None:

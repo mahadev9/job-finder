@@ -1,9 +1,10 @@
 import logging
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 import aiofiles
 
+from core.config import settings
 from database.models.jobs import Job
 from services.llm_agent import invoke_agent
 from services.prompt_config import build_match_system_prompt
@@ -52,14 +53,14 @@ async def run_match_pipeline(
     batch_size: int = _BATCH_SIZE,
     companies: list[str] | None = None,
 ) -> int:
-    jobs = await get_jobs_for_date(for_date or date.today(), companies=companies)
+    jobs = await get_jobs_for_date(for_date or datetime.now(settings.tz).date(), companies=companies)
     if not jobs:
         logger.info("No jobs found for today — skipping match pipeline")
         return 0
 
     logger.info(f"Running match pipeline on {len(jobs)} job(s)")
     profile, cv = await _load_templates()
-    today = (for_date or date.today()).strftime("%B %d, %Y")
+    today = (for_date or datetime.now(settings.tz).date()).strftime("%B %d, %Y")
     system_prompt = build_match_system_prompt(profile, cv, today)
 
     total_batches = -(-len(jobs) // batch_size)
