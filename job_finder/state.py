@@ -130,6 +130,7 @@ class AppState(rx.State):
     company_filter_search: str = ""
     from_date: str = ""
     to_date: str = ""
+    score_range: list[int] = [0, 10]
     match_date: str = ""
     match_batch_size: int = 5
 
@@ -285,10 +286,21 @@ class AppState(rx.State):
         return [c for c in self.distinct_companies if q in c.lower()]
 
     @rx.var
+    def score_range_label(self) -> str:
+        lo, hi = self.score_range[0], self.score_range[1]
+        if lo == 0 and hi == 10:
+            return "Score: All"
+        return f"Score: {lo}–{hi}"
+
+    @rx.var
     def display_jobs(self) -> list[JobRow]:
-        if not self.company_filter:
-            return self.jobs
-        return [j for j in self.jobs if j.company in self.company_filter]
+        lo, hi = self.score_range[0], self.score_range[1]
+        jobs = self.jobs
+        if self.company_filter:
+            jobs = [j for j in jobs if j.company in self.company_filter]
+        if lo > 0 or hi < 10:
+            jobs = [j for j in jobs if lo <= j.score <= hi]
+        return jobs
 
     @rx.var
     def jobs_page_items(self) -> list[JobRow]:
@@ -416,6 +428,10 @@ class AppState(rx.State):
         self.to_date = value
         self.company_filter = []
         await self.load_jobs()
+
+    def set_score_range(self, value: list[int]):
+        self.score_range = value
+        self.jobs_page = 0
 
     def set_match_date(self, value: str):
         self.match_date = value

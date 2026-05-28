@@ -864,6 +864,42 @@ def jobs_section() -> rx.Component:
                     on_change=AppState.set_status_filter,
                 ),
                 rx.vstack(
+                    rx.hstack(
+                        rx.text("Score", size="1", color_scheme="gray"),
+                        rx.spacer(),
+                        rx.badge(
+                            AppState.score_range[0],
+                            " – ",
+                            AppState.score_range[1],
+                            variant="soft",
+                            color_scheme="violet",
+                            size="1",
+                        ),
+                        width="176px",
+                        align="center",
+                    ),
+                    rx.hstack(
+                        rx.text("0", size="1", color="var(--gray-9)"),
+                        rx.slider(
+                            value=AppState.score_range,
+                            min=0,
+                            max=10,
+                            step=1,
+                            on_change=AppState.set_score_range,
+                            color_scheme="violet",
+                            size="1",
+                            flex="1",
+                        ),
+                        rx.text("10", size="1", color="var(--gray-9)"),
+                        spacing="2",
+                        align="center",
+                        width="176px",
+                    ),
+                    gap="10px",
+                    align="start",
+                    padding_bottom="6px",
+                ),
+                rx.vstack(
                     rx.text("From", size="1", color_scheme="gray"),
                     date_input(
                         AppState.from_date,
