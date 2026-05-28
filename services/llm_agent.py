@@ -27,7 +27,12 @@ async def create_llm_agent(
             "job_finder": {
                 "transport": "streamable-http",
                 "url": "http://localhost:8050/mcp",
-            }
+            },
+            "playwright": {
+                "transport": "stdio",
+                "command": "npx",
+                "args": ["@playwright/mcp@latest", "--isolated"],
+            },
         }
     )
     tools = await client.get_tools()
@@ -69,7 +74,9 @@ async def invoke_agent(
     model: str | None = None,
 ) -> bool:
     preview = query[:120].replace("\n", " ")
-    logger.info(f"Invoking agent | model: {model or settings.LLM_MODEL} | query: {preview}{'…' if len(query) > 120 else ''}")
+    logger.info(
+        f"Invoking agent | model: {model or settings.LLM_MODEL} | query: {preview}{'…' if len(query) > 120 else ''}"
+    )
 
     async with AsyncSqliteSaver.from_conn_string(
         settings.CHECKPOINTER_DATABASE_PATH
