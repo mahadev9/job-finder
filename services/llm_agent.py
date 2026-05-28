@@ -28,16 +28,9 @@ async def create_llm_agent(
                 "transport": "streamable-http",
                 "url": "http://localhost:8050/mcp",
             },
-            "playwright": {
-                "transport": "stdio",
-                "command": "npx",
-                "args": ["@playwright/mcp@latest", "--isolated"],
-            },
         }
     )
     tools = await client.get_tools()
-
-    tools = []
 
     if provider == "lmstudio":
         tools = [
