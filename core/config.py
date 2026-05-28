@@ -37,6 +37,7 @@ class Settings(BaseSettings):
         default_factory=lambda: [
             "openai:gpt-5.4",
             "openai:gpt-5.4-mini",
+            "google_genai:gemini-3.5-flash",
             "google_genai:gemini-3.1-flash-lite-preview",
             "google_genai:gemini-3-flash-preview",
             "anthropic:claude-haiku-4-5",
