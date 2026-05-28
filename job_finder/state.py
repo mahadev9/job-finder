@@ -429,8 +429,8 @@ class AppState(rx.State):
         self.company_filter = []
         await self.load_jobs()
 
-    def set_score_range(self, value: list[int]):
-        self.score_range = value
+    def set_score_range(self, value: list[float]):
+        self.score_range = [int(v) for v in value]
         self.jobs_page = 0
 
     def set_match_date(self, value: str):
