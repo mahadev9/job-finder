@@ -14,7 +14,6 @@ _DATE_INPUT_STYLE: dict = {
     "color": "var(--gray-12)",
     "background": "var(--color-surface)",
     "cursor": "pointer",
-    "color_scheme": "normal",
 }
 
 
@@ -131,6 +130,17 @@ def navbar() -> rx.Component:
                     "Scan portals · match with AI · track applications",
                     size="2",
                     color_scheme="gray",
+                ),
+                rx.link(
+                    rx.hstack(
+                        rx.icon("bar-chart-2", size=14),
+                        rx.text("Token Usage", size="2"),
+                        spacing="1",
+                        align="center",
+                    ),
+                    href="/usage",
+                    color_scheme="gray",
+                    underline="none",
                 ),
                 rx.color_mode.button(variant="ghost", size="2"),
                 spacing="3",
@@ -658,7 +668,6 @@ def fetched_jobs_section() -> rx.Component:
                     date_input(
                         AppState.fetched_to_date,
                         AppState.set_fetched_to_date,
-                        disabled=AppState.fetched_from_date == "",
                         min_val=AppState.fetched_from_date,
                     ),
                     spacing="1",
@@ -868,7 +877,6 @@ def jobs_section() -> rx.Component:
                     date_input(
                         AppState.to_date,
                         AppState.set_to_date,
-                        disabled=AppState.from_date == "",
                         min_val=AppState.from_date,
                     ),
                     spacing="1",

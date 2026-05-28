@@ -9,6 +9,7 @@ from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.types import Checkpointer
 
 from core.config import settings
+from services.usage_callback import UsageCallbackHandler
 
 logger = logging.getLogger("job-finder")
 
@@ -54,7 +55,9 @@ async def create_llm_agent(checkpointer: Checkpointer, system_prompt: str):
     )
 
 
-async def invoke_agent(query: str, system_prompt: str) -> bool:
+async def invoke_agent(
+    query: str, system_prompt: str, pipeline: str | None = None
+) -> bool:
     preview = query[:120].replace("\n", " ")
     logger.info(f"Invoking agent | query: {preview}{'…' if len(query) > 120 else ''}")
 
@@ -64,7 +67,9 @@ async def invoke_agent(query: str, system_prompt: str) -> bool:
         agent = await create_llm_agent(checkpointer, system_prompt)
 
         config = RunnableConfig(
-            configurable={"thread_id": str(uuid4())}, recursion_limit=100
+            configurable={"thread_id": str(uuid4())},
+            recursion_limit=100,
+            callbacks=[UsageCallbackHandler(pipeline=pipeline)],
         )
         response = await agent.ainvoke(
             {"messages": [HumanMessage(content=query)]}, config=config

@@ -21,6 +21,7 @@ from services.queries import (
     get_fetched_jobs,
     get_matched_jobs,
     get_new_jobs_since,
+    get_token_usage_page,
 )
 
 
@@ -693,3 +694,104 @@ class AppState(rx.State):
                 self.running = ""
                 self.result_kind = "error"
                 self.result_message = str(exc)
+
+
+# ── Token usage page ──────────────────────────────────────────────────────────
+
+
+class UsageRow(BaseModel):
+    id: int
+    request_id: str
+    model: str
+    pipeline: str
+    input_tokens: int
+    output_tokens: int
+    reasoning_tokens: int
+    total_tokens: int
+    created_at: str
+
+
+class UsageState(rx.State):
+    usage_rows: list[UsageRow] = []
+    usage_page: int = 0
+    usage_page_size: int = 20
+    usage_total_count: int = 0
+    usage_total_input: int = 0
+    usage_total_output: int = 0
+    usage_total_tokens: int = 0
+    usage_total_reasoning: int = 0
+    usage_pipeline_filter: str = "all"
+    usage_from_date: str = ""
+    usage_to_date: str = ""
+
+    @rx.var
+    def usage_page_count(self) -> int:
+        return max(1, -(-self.usage_total_count // self.usage_page_size))
+
+    @rx.var
+    def usage_range_label(self) -> str:
+        if not self.usage_total_count:
+            return "0 records"
+        start = self.usage_page * self.usage_page_size + 1
+        end = min((self.usage_page + 1) * self.usage_page_size, self.usage_total_count)
+        return f"{start}–{end} of {self.usage_total_count}"
+
+    async def _load(self) -> None:
+        pipeline = self.usage_pipeline_filter if self.usage_pipeline_filter != "all" else None
+        from_d = date.fromisoformat(self.usage_from_date) if self.usage_from_date else None
+        to_d = date.fromisoformat(self.usage_to_date) if self.usage_to_date else None
+        rows, total, agg = await get_token_usage_page(
+            pipeline=pipeline,
+            from_date=from_d,
+            to_date=to_d,
+            offset=self.usage_page * self.usage_page_size,
+            limit=self.usage_page_size,
+        )
+        self.usage_rows = [
+            UsageRow(
+                id=r.id,
+                request_id=(r.request_id or "")[:8],
+                model=r.model,
+                pipeline=r.pipeline or "—",
+                input_tokens=r.input_tokens,
+                output_tokens=r.output_tokens,
+                reasoning_tokens=r.reasoning_tokens,
+                total_tokens=r.total_tokens,
+                created_at=r.created_at.astimezone(settings.tz).strftime("%b %d, %H:%M"),
+            )
+            for r in rows
+        ]
+        self.usage_total_count = total
+        self.usage_total_input = agg["input_tokens"]
+        self.usage_total_output = agg["output_tokens"]
+        self.usage_total_tokens = agg["total_tokens"]
+        self.usage_total_reasoning = agg["reasoning_tokens"]
+
+    async def on_load(self) -> None:
+        self.usage_page = 0
+        await self._load()
+
+    async def set_usage_pipeline_filter(self, value: str) -> None:
+        self.usage_pipeline_filter = value
+        self.usage_page = 0
+        await self._load()
+
+    async def set_usage_from_date(self, value: str) -> None:
+        self.usage_from_date = value
+        self.usage_page = 0
+        await self._load()
+
+    async def set_usage_to_date(self, value: str) -> None:
+        self.usage_to_date = value
+        self.usage_page = 0
+        await self._load()
+
+    async def usage_prev_page(self) -> None:
+        if self.usage_page > 0:
+            self.usage_page -= 1
+            await self._load()
+
+    async def usage_next_page(self) -> None:
+        if self.usage_page < self.usage_page_count - 1:
+            self.usage_page += 1
+            await self._load()

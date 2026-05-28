@@ -24,11 +24,14 @@ _ENSURE_INDEXES = [
     "CREATE INDEX IF NOT EXISTS ix_matched_jobs_created_at ON matched_jobs (created_at)",
     "CREATE INDEX IF NOT EXISTS ix_matched_jobs_status_created_at ON matched_jobs (status, created_at)",
     "CREATE INDEX IF NOT EXISTS ix_matched_jobs_score_desc ON matched_jobs (score)",
+    "CREATE INDEX IF NOT EXISTS ix_token_usage_created_at ON token_usage (created_at)",
+    "CREATE INDEX IF NOT EXISTS ix_token_usage_pipeline ON token_usage (pipeline)",
 ]
 
 _MIGRATIONS = [
     "ALTER TABLE jobs ADD COLUMN pipeline_ran BOOLEAN NOT NULL DEFAULT 0",
     "ALTER TABLE matched_jobs ADD COLUMN status_changed_at DATETIME",
+    "ALTER TABLE token_usage ADD COLUMN reasoning_tokens INTEGER NOT NULL DEFAULT 0",
 ]
 
 

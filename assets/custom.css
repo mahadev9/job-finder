@@ -1,0 +1,12 @@
+/* Calendar picker icon: always visible in both light and dark mode */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    opacity: 0.7;
+    cursor: pointer;
+}
+
+.dark input[type="date"]::-webkit-calendar-picker-indicator,
+.dark-theme input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.7;
+    cursor: pointer;
+}

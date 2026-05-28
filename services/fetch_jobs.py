@@ -56,7 +56,7 @@ async def fetch_from_query(name: str, query: str) -> None:
         f"and portal name (from the URL domain). Save each one with save_job_to_db."
     )
     logger.info(f"Fetching search query: {name}")
-    await invoke_agent(prompt, await _fetch_system_prompt())
+    await invoke_agent(prompt, await _fetch_system_prompt(), pipeline="fetch")
 
 
 async def fetch_from_company(
@@ -76,7 +76,7 @@ async def fetch_from_company(
             f"and the portal name derived from the URL domain."
         )
     logger.info(f"Fetching company: {name}")
-    await invoke_agent(prompt, await _fetch_system_prompt())
+    await invoke_agent(prompt, await _fetch_system_prompt(), pipeline="fetch")
 
 
 # ── Iterable steps (used by UI for progress) ─────────────────────────────────

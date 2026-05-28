@@ -1,12 +1,13 @@
 import logging
 from datetime import date, datetime, timedelta
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from core.config import settings
 from database.core import SessionLocal
 from database.models.jobs import Job
 from database.models.matched_jobs import JobStatus, MatchedJob
+from database.models.token_usage import TokenUsage
 
 logger = logging.getLogger("job-finder")
 
@@ -98,6 +99,58 @@ async def get_fetched_jobs(
                 )
             )
         return list((await session.execute(stmt)).scalars().all())
+
+
+async def get_token_usage_page(
+    pipeline: str | None = None,
+    from_date: date | None = None,
+    to_date: date | None = None,
+    offset: int = 0,
+    limit: int = 20,
+) -> tuple[list[TokenUsage], int, dict]:
+    async with SessionLocal() as session:
+        conditions = []
+        if pipeline:
+            conditions.append(TokenUsage.pipeline == pipeline)
+        if from_date:
+            conditions.append(
+                TokenUsage.created_at
+                >= datetime.combine(from_date, datetime.min.time(), tzinfo=settings.tz)
+            )
+        if to_date:
+            conditions.append(
+                TokenUsage.created_at
+                < datetime.combine(
+                    to_date + timedelta(days=1), datetime.min.time(), tzinfo=settings.tz
+                )
+            )
+
+        count_stmt = select(func.count()).select_from(TokenUsage)
+        agg_stmt = select(
+            func.coalesce(func.sum(TokenUsage.input_tokens), 0).label("input_tokens"),
+            func.coalesce(func.sum(TokenUsage.output_tokens), 0).label("output_tokens"),
+            func.coalesce(func.sum(TokenUsage.total_tokens), 0).label("total_tokens"),
+            func.coalesce(func.sum(TokenUsage.reasoning_tokens), 0).label("reasoning_tokens"),
+        )
+        page_stmt = select(TokenUsage).order_by(TokenUsage.created_at.desc())
+
+        if conditions:
+            count_stmt = count_stmt.where(*conditions)
+            agg_stmt = agg_stmt.where(*conditions)
+            page_stmt = page_stmt.where(*conditions)
+
+        total = (await session.execute(count_stmt)).scalar() or 0
+        agg = (await session.execute(agg_stmt)).one()
+        rows = list(
+            (await session.execute(page_stmt.offset(offset).limit(limit))).scalars().all()
+        )
+
+        return rows, total, {
+            "input_tokens": agg.input_tokens,
+            "output_tokens": agg.output_tokens,
+            "total_tokens": agg.total_tokens,
+            "reasoning_tokens": agg.reasoning_tokens,
+        }
 
 
 async def bulk_update_matched_job_status(updates: dict[int, JobStatus]) -> None:

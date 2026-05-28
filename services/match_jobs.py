@@ -70,7 +70,7 @@ async def run_match_pipeline(
         logger.info(f"Matching batch {batch_num}/{total_batches} ({len(batch)} jobs)")
         if progress_callback:
             await progress_callback(batch_num, total_batches)
-        await invoke_agent(_build_match_prompt(batch), system_prompt)
+        await invoke_agent(_build_match_prompt(batch), system_prompt, pipeline="match")
         logger.info(f"Batch {batch_num}/{total_batches} complete")
 
     await mark_jobs_matched([j.id for j in jobs])
