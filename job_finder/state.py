@@ -155,6 +155,7 @@ class AppState(rx.State):
     fetched_company_filter_search: str = ""
     fetched_from_date: str = ""
     fetched_to_date: str = ""
+    fetched_pipeline_ran_filter: str = "all"
 
     # Fetched jobs sort
     fetched_sort_col: str = "fetched_ts"
@@ -344,11 +345,14 @@ class AppState(rx.State):
 
     @rx.var
     def display_fetched_jobs(self) -> list[FetchedJobRow]:
-        if not self.fetched_company_filter:
-            return self.fetched_jobs
-        return [
-            j for j in self.fetched_jobs if j.company in self.fetched_company_filter
-        ]
+        jobs = self.fetched_jobs
+        if self.fetched_company_filter:
+            jobs = [j for j in jobs if j.company in self.fetched_company_filter]
+        if self.fetched_pipeline_ran_filter == "ran":
+            jobs = [j for j in jobs if j.pipeline_ran]
+        elif self.fetched_pipeline_ran_filter == "pending":
+            jobs = [j for j in jobs if not j.pipeline_ran]
+        return jobs
 
     @rx.var
     def fetched_page_items(self) -> list[FetchedJobRow]:
@@ -528,6 +532,10 @@ class AppState(rx.State):
         self.fetched_company_filter = []
         self.fetched_page = 0
 
+    def set_fetched_pipeline_ran_filter(self, value: str):
+        self.fetched_pipeline_ran_filter = value
+        self.fetched_page = 0
+
     def set_fetched_company_filter_search(self, value: str):
         self.fetched_company_filter_search = value
 
@@ -659,6 +667,8 @@ class AppState(rx.State):
                 status_filter = self.status_filter
                 from_date_str = self.from_date
                 to_date_str = self.to_date
+                fetched_from_date_str = self.fetched_from_date
+                fetched_to_date_str = self.fetched_to_date
                 self.running = "match"
                 self.progress = 0.05
                 self.status_text = "Loading jobs for matching…"
@@ -698,11 +708,14 @@ class AppState(rx.State):
             status = status_filter if status_filter != "all" else None
             from_d = date.fromisoformat(from_date_str) if from_date_str else None
             to_d = date.fromisoformat(to_date_str) if to_date_str else None
+            fetched_from_d = date.fromisoformat(fetched_from_date_str) if fetched_from_date_str else None
+            fetched_to_d = date.fromisoformat(fetched_to_date_str) if fetched_to_date_str else None
             db_jobs = await get_matched_jobs(status, from_d, to_d)
-            fetched = await get_fetched_jobs()
+            fetched = await get_fetched_jobs(fetched_from_d, fetched_to_d)
             async with self:
                 self.jobs = [_to_row(j) for j in db_jobs]
                 self.fetched_jobs = [_to_fetched_row(j) for j in fetched]
+                self.fetched_page = 0
 
         except Exception as exc:
             logger.exception("Match pipeline failed")

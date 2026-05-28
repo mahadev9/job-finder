@@ -8,7 +8,7 @@ from core.config import settings
 from database.models.jobs import Job
 from services.llm_agent import invoke_agent
 from services.prompt_config import build_match_system_prompt
-from services.queries import get_jobs_for_date, mark_jobs_matched
+from services.queries import get_unmatched_jobs, mark_jobs_matched
 
 logger = logging.getLogger("job-finder")
 
@@ -53,7 +53,7 @@ async def run_match_pipeline(
     batch_size: int = _BATCH_SIZE,
     companies: list[str] | None = None,
 ) -> int:
-    jobs = await get_jobs_for_date(for_date or datetime.now(settings.tz).date(), companies=companies)
+    jobs = await get_unmatched_jobs(for_date=for_date, companies=companies)
     if not jobs:
         logger.info("No jobs found for today — skipping match pipeline")
         return 0
@@ -71,8 +71,8 @@ async def run_match_pipeline(
         if progress_callback:
             await progress_callback(batch_num, total_batches)
         await invoke_agent(_build_match_prompt(batch), system_prompt, pipeline="match")
+        await mark_jobs_matched([j.id for j in batch])
         logger.info(f"Batch {batch_num}/{total_batches} complete")
 
-    await mark_jobs_matched([j.id for j in jobs])
     logger.info(f"Match pipeline complete: evaluated {len(jobs)} job(s)")
     return len(jobs)

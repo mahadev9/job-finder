@@ -46,23 +46,22 @@ async def get_new_jobs_since(since: datetime) -> list[Job]:
         return list((await session.execute(stmt)).scalars().all())
 
 
-async def get_jobs_for_date(
-    for_date: date, companies: list[str] | None = None
+async def get_unmatched_jobs(
+    for_date: date | None = None,
+    companies: list[str] | None = None,
 ) -> list[Job]:
-    day_start = datetime.combine(for_date, datetime.min.time(), tzinfo=settings.tz)
-    day_end = datetime.combine(
-        for_date + timedelta(days=1), datetime.min.time(), tzinfo=settings.tz
-    )
     async with SessionLocal() as session:
         stmt = (
             select(Job)
-            .where(
-                Job.created_at >= day_start,
-                Job.created_at < day_end,
-                Job.pipeline_ran == False,  # noqa: E712
-            )
+            .where(Job.pipeline_ran == False)  # noqa: E712
             .order_by(Job.created_at.asc())
         )
+        if for_date:
+            day_start = datetime.combine(for_date, datetime.min.time(), tzinfo=settings.tz)
+            day_end = datetime.combine(
+                for_date + timedelta(days=1), datetime.min.time(), tzinfo=settings.tz
+            )
+            stmt = stmt.where(Job.created_at >= day_start, Job.created_at < day_end)
         if companies:
             stmt = stmt.where(Job.company_name.in_(companies))
         return list((await session.execute(stmt)).scalars().all())

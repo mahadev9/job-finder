@@ -654,6 +654,16 @@ def fetched_jobs_section() -> rx.Component:
                         "Search companies…",
                     ),
                 ),
+                rx.select.root(
+                    rx.select.trigger(placeholder="All", size="2"),
+                    rx.select.content(
+                        rx.select.item("All", value="all"),
+                        rx.select.item("Ran", value="ran"),
+                        rx.select.item("Pending", value="pending"),
+                    ),
+                    value=AppState.fetched_pipeline_ran_filter,
+                    on_change=AppState.set_fetched_pipeline_ran_filter,
+                ),
                 rx.vstack(
                     rx.text("From", size="1", color_scheme="gray"),
                     date_input(
