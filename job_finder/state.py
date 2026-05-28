@@ -136,7 +136,7 @@ class AppState(rx.State):
     to_date: str = ""
     score_range: list[int] = [0, 10]
     match_date: str = ""
-    match_batch_size: int = 5
+    match_batch_size: int = 2
 
     # Match pipeline options
     match_companies: list[str] = []

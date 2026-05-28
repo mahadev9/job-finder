@@ -354,6 +354,7 @@ def match_card() -> rx.Component:
                         rx.select.root(
                             rx.select.trigger(size="1"),
                             rx.select.content(
+                                rx.select.item("2", value="2"),
                                 rx.select.item("5", value="5"),
                                 rx.select.item("10", value="10"),
                                 rx.select.item("15", value="15"),
