@@ -53,11 +53,12 @@ async def run_match_pipeline(
     batch_size: int = _BATCH_SIZE,
     companies: list[str] | None = None,
     model: str | None = None,
-) -> int:
+    should_stop=None,
+) -> tuple[int, bool]:
     jobs = await get_unmatched_jobs(for_date=for_date, companies=companies)
     if not jobs:
         logger.info("No jobs found for today — skipping match pipeline")
-        return 0
+        return 0, False
 
     logger.info(f"Running match pipeline on {len(jobs)} job(s)")
     profile, cv = await _load_templates()
@@ -65,7 +66,11 @@ async def run_match_pipeline(
     system_prompt = build_match_system_prompt(profile, cv, today)
 
     total_batches = -(-len(jobs) // batch_size)
+    processed = 0
     for i in range(0, len(jobs), batch_size):
+        if should_stop and should_stop():
+            logger.info("Match pipeline stopped by request")
+            return processed, True
         batch = jobs[i : i + batch_size]
         batch_num = i // batch_size + 1
         logger.info(f"Matching batch {batch_num}/{total_batches} ({len(batch)} jobs)")
@@ -73,7 +78,8 @@ async def run_match_pipeline(
             await progress_callback(batch_num, total_batches)
         await invoke_agent(_build_match_prompt(batch), system_prompt, pipeline="match", model=model)
         await mark_jobs_matched([j.id for j in batch])
+        processed += len(batch)
         logger.info(f"Batch {batch_num}/{total_batches} complete")
 
     logger.info(f"Match pipeline complete: evaluated {len(jobs)} job(s)")
-    return len(jobs)
+    return processed, False

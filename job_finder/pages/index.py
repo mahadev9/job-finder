@@ -432,8 +432,18 @@ def pipeline_section() -> rx.Component:
                     rx.hstack(
                         rx.spinner(size="2"),
                         rx.text(AppState.status_text, size="2", weight="medium"),
+                        rx.spacer(),
+                        rx.button(
+                            rx.icon("square", size=12),
+                            "Stop",
+                            on_click=AppState.stop_pipeline,
+                            size="1",
+                            variant="soft",
+                            color_scheme="red",
+                        ),
                         spacing="2",
                         align="center",
+                        width="100%",
                     ),
                     rx.progress(
                         value=AppState.progress_pct,

@@ -10,6 +10,7 @@ PipelineKind = Literal["fetch", "match"]
 class _PipelineState:
     def __init__(self) -> None:
         self._lock = threading.Lock()
+        self._stop_event = threading.Event()
         self.running: PipelineKind | None = None
         self.progress: float = 0.0
         self.status_text: str = ""
@@ -25,7 +26,15 @@ class _PipelineState:
             self.result_message = ""
             self.result_kind = None
             self.new_jobs = []
+        self._stop_event.clear()
         logger.info(f"Pipeline started: {kind}")
+
+    def request_stop(self) -> None:
+        self._stop_event.set()
+        logger.info("Pipeline stop requested")
+
+    def is_stop_requested(self) -> bool:
+        return self._stop_event.is_set()
 
     def update(self, progress: float, text: str) -> None:
         with self._lock:

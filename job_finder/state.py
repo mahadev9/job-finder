@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from core.config import settings
 from core.logger import bootstrap_logging
+from core.pipeline_state import pipeline_state
 from database.core import init_db
 from database.models.matched_jobs import JobStatus
 from services.fetch_jobs import (
@@ -595,6 +596,9 @@ class AppState(rx.State):
         self.result_message = ""
         self.result_kind = ""
 
+    def stop_pipeline(self):
+        pipeline_state.request_stop()
+
     # Background pipelines
 
     @rx.event(background=True)
@@ -611,6 +615,7 @@ class AppState(rx.State):
         ]
         fetch_start = datetime.now(settings.tz)
 
+        pipeline_state.start("fetch")
         async with self:
             self.running = "fetch"
             self.progress = 0.0
@@ -620,7 +625,11 @@ class AppState(rx.State):
             self.new_jobs = []
 
         try:
+            completed = 0
             for i, (name, kind, data) in enumerate(steps):
+                if pipeline_state.is_stop_requested():
+                    break
+
                 async with self:
                     self.progress = (i + 1) / (len(steps) + 1)
                     self.status_text = f"Fetching ({i + 1}/{len(steps)}): {name}…"
@@ -632,6 +641,7 @@ class AppState(rx.State):
                         name, data["careers_url"], data.get("scan_query"), model=selected_model
                     )
 
+                completed += 1
                 new = await get_new_jobs_since(fetch_start)
                 async with self:
                     self.new_jobs = [
@@ -648,11 +658,16 @@ class AppState(rx.State):
                         f" ({len(new)} new job(s) so far)"
                     )
 
+            was_stopped = pipeline_state.is_stop_requested()
             async with self:
                 self.running = ""
                 self.progress = 1.0
-                self.result_kind = "success"
-                self.result_message = f"Fetched from {len(steps)} source(s)."
+                if was_stopped:
+                    self.result_kind = "warning"
+                    self.result_message = f"Stopped after {completed}/{len(steps)} source(s)."
+                else:
+                    self.result_kind = "success"
+                    self.result_message = f"Fetched from {len(steps)} source(s)."
 
             fetched = await get_fetched_jobs()
             async with self:
@@ -686,6 +701,8 @@ class AppState(rx.State):
                 self.result_message = ""
                 self.result_kind = ""
 
+            pipeline_state.start("match")
+
             _match_date = (
                 date.fromisoformat(match_date_str) if match_date_str else datetime.now(settings.tz).date()
             )
@@ -695,15 +712,21 @@ class AppState(rx.State):
                     self.progress = 0.1 + (batch_num / total_batches) * 0.85
                     self.status_text = f"Matching batch {batch_num}/{total_batches}…"
 
-            count = await run_match_pipeline(
+            count, was_stopped = await run_match_pipeline(
                 progress_callback=_on_batch,
                 for_date=_match_date,
                 batch_size=match_batch_size,
                 companies=match_companies or None,
                 model=selected_model,
+                should_stop=pipeline_state.is_stop_requested,
             )
 
-            if count == 0:
+            if was_stopped:
+                async with self:
+                    self.running = ""
+                    self.result_kind = "warning"
+                    self.result_message = f"Stopped after evaluating {count} job(s)."
+            elif count == 0:
                 async with self:
                     self.running = ""
                     self.result_kind = "warning"
