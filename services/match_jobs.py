@@ -52,6 +52,7 @@ async def run_match_pipeline(
     for_date: date | None = None,
     batch_size: int = _BATCH_SIZE,
     companies: list[str] | None = None,
+    model: str | None = None,
 ) -> int:
     jobs = await get_unmatched_jobs(for_date=for_date, companies=companies)
     if not jobs:
@@ -70,7 +71,7 @@ async def run_match_pipeline(
         logger.info(f"Matching batch {batch_num}/{total_batches} ({len(batch)} jobs)")
         if progress_callback:
             await progress_callback(batch_num, total_batches)
-        await invoke_agent(_build_match_prompt(batch), system_prompt, pipeline="match")
+        await invoke_agent(_build_match_prompt(batch), system_prompt, pipeline="match", model=model)
         await mark_jobs_matched([j.id for j in batch])
         logger.info(f"Batch {batch_num}/{total_batches} complete")
 

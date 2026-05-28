@@ -49,18 +49,18 @@ async def get_enabled_companies() -> list[dict]:
 # ── Per-item fetch ────────────────────────────────────────────────────────────
 
 
-async def fetch_from_query(name: str, query: str) -> None:
+async def fetch_from_query(name: str, query: str, model: str | None = None) -> None:
     prompt = (
         f"Search for jobs using this exact query:\n{query}\n\n"
         f"For each result, extract the company name, job title, direct job URL, "
         f"and portal name (from the URL domain). Save each one with save_job_to_db."
     )
     logger.info(f"Fetching search query: {name}")
-    await invoke_agent(prompt, await _fetch_system_prompt(), pipeline="fetch")
+    await invoke_agent(prompt, await _fetch_system_prompt(), pipeline="fetch", model=model)
 
 
 async def fetch_from_company(
-    name: str, careers_url: str, scan_query: str | None
+    name: str, careers_url: str, scan_query: str | None, model: str | None = None
 ) -> None:
     if scan_query:
         prompt = (
@@ -76,7 +76,7 @@ async def fetch_from_company(
             f"and the portal name derived from the URL domain."
         )
     logger.info(f"Fetching company: {name}")
-    await invoke_agent(prompt, await _fetch_system_prompt(), pipeline="fetch")
+    await invoke_agent(prompt, await _fetch_system_prompt(), pipeline="fetch", model=model)
 
 
 # ── Iterable steps (used by UI for progress) ─────────────────────────────────

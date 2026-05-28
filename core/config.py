@@ -1,4 +1,5 @@
 import os
+from typing import List
 from zoneinfo import ZoneInfo
 
 from langchain.chat_models import BaseChatModel
@@ -13,7 +14,10 @@ class Settings(BaseSettings):
     """Application settings."""
 
     model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", extra="ignore"
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        env_list_separator=",",
     )
 
     APP_PATH: str = Field(
@@ -27,7 +31,23 @@ class Settings(BaseSettings):
 
     LLM_MODEL: str = Field(
         ...,
-        description="The language model to use for generating responses. Format: provider:model_name (e.g., 'openai:gpt-5.4')",
+        description="Default language model. Format: provider:model_name",
+    )
+    AVAILABLE_MODELS: List[str] = Field(
+        default_factory=lambda: [
+            "openai:gpt-5.4",
+            "openai:gpt-5.4-mini",
+            "google_genai:gemini-3.1-flash-lite-preview",
+            "google_genai:gemini-3-flash-preview",
+            "anthropic:claude-haiku-4-5",
+            "anthropic:claude-sonnet-4-6",
+            "lmstudio:qwen/qwen3.6-27b",
+            "lmstudio:qwen/qwen3.6-35b-a3b",
+            "lmstudio:google/gemma-4-26b-a4b",
+            "lmstudio:gemma-4-31b-it",
+            "lmstudio:nvidia/nemotron-3-nano-4b",
+        ],
+        description="Models shown in the UI selector (comma-separated). Defaults to LLM_MODEL only.",
     )
     LM_STUDIO_API_KEY: SecretStr | None = Field(
         default=None,
@@ -51,11 +71,11 @@ class Settings(BaseSettings):
     )
     DEFAULT_TEMPERATURE: float = Field(
         0.7,
-        description="The default temperature for language model responses. Higher values (e.g., 0.9) make output more random, while lower values (e.g., 0.2) make it more focused and deterministic.",
+        description="Default temperature for LLM responses.",
     )
     APP_TIMEZONE: str = Field(
         default="America/New_York",
-        description="IANA timezone name used for all datetime storage and date-range queries (e.g. 'America/New_York', 'America/Chicago', 'America/Los_Angeles').",
+        description="IANA timezone name (e.g. 'America/New_York').",
     )
 
     @model_validator(mode="after")
@@ -101,34 +121,48 @@ class Settings(BaseSettings):
         return self.LLM_MODEL.split(":", 1)[1]
 
     @property
-    def llm_client(self) -> BaseChatModel:
-        if self.llm_provider == "lmstudio":
+    def all_available_models(self) -> list[str]:
+        if self.AVAILABLE_MODELS:
+            return self.AVAILABLE_MODELS
+        return [self.LLM_MODEL]
+
+    def get_llm_client(self, model_str: str) -> BaseChatModel:
+        parts = model_str.split(":", 1)
+        provider = parts[0]
+        model_name = parts[1] if len(parts) > 1 else ""
+
+        if provider == "lmstudio":
             return ChatOpenAI(
                 base_url=self.LM_STUDIO_BASE_URL,
-                model=self.llm_model_name,
+                model=model_name,
                 temperature=self.DEFAULT_TEMPERATURE,
                 use_responses_api=True,
                 api_key=self.LM_STUDIO_API_KEY.get_secret_value(),
             )
-        elif self.llm_provider == "openai":
+        elif provider == "openai":
             return ChatOpenAI(
-                model=self.llm_model_name,
+                model=model_name,
                 temperature=self.DEFAULT_TEMPERATURE,
                 api_key=self.OPENAI_API_KEY.get_secret_value(),
             )
-        elif self.llm_provider == "anthropic":
+        elif provider == "anthropic":
             return ChatAnthropic(
-                model=self.llm_model_name,
+                model=model_name,
                 temperature=self.DEFAULT_TEMPERATURE,
                 api_key=self.ANTHROPIC_API_KEY.get_secret_value(),
             )
-        elif self.llm_provider == "google_genai":
+        elif provider == "google_genai":
             return ChatGoogleGenerativeAI(
-                model=self.llm_model_name,
+                model=model_name,
                 temperature=self.DEFAULT_TEMPERATURE,
                 thinking_level="medium",
                 api_key=self.GEMINI_API_KEY.get_secret_value(),
             )
+        raise ValueError(f"Unsupported provider '{provider}'")
+
+    @property
+    def llm_client(self) -> BaseChatModel:
+        return self.get_llm_client(self.LLM_MODEL)
 
     @property
     def tz(self) -> ZoneInfo:

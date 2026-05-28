@@ -142,6 +142,17 @@ def navbar() -> rx.Component:
                     color_scheme="gray",
                     underline="none",
                 ),
+                rx.select.root(
+                    rx.select.trigger(size="1", variant="ghost"),
+                    rx.select.content(
+                        rx.foreach(
+                            AppState.available_models,
+                            lambda m: rx.select.item(m, value=m),
+                        ),
+                    ),
+                    value=AppState.selected_model,
+                    on_change=AppState.set_selected_model,
+                ),
                 rx.color_mode.button(variant="ghost", size="2"),
                 spacing="3",
                 align="center",

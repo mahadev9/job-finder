@@ -116,6 +116,10 @@ def _to_fetched_row(j) -> FetchedJobRow:
 
 
 class AppState(rx.State):
+    # Model selection
+    selected_model: str = ""
+    available_models: list[str] = []
+
     # Pipeline
     running: str = ""
     progress: float = 0.0
@@ -383,6 +387,8 @@ class AppState(rx.State):
     async def on_load(self):
         bootstrap_logging()
         await init_db()
+        self.selected_model = settings.LLM_MODEL
+        self.available_models = settings.all_available_models
         self.match_date = str(datetime.now(settings.tz).date())
         self.fetch_available_companies = [
             c["name"] for c in await get_enabled_companies()
@@ -436,6 +442,9 @@ class AppState(rx.State):
     def set_score_range(self, value: list[float]):
         self.score_range = [int(v) for v in value]
         self.jobs_page = 0
+
+    def set_selected_model(self, value: str):
+        self.selected_model = value
 
     def set_match_date(self, value: str):
         self.match_date = value
@@ -594,6 +603,7 @@ class AppState(rx.State):
         async with self:
             fetch_companies = list(self.fetch_companies) or None
             fetch_queries = list(self.fetch_queries) or None
+            selected_model = self.selected_model or None
         steps = [
             s async for s in iter_fetch_steps(
                 companies=fetch_companies, queries=fetch_queries
@@ -616,10 +626,10 @@ class AppState(rx.State):
                     self.status_text = f"Fetching ({i + 1}/{len(steps)}): {name}…"
 
                 if kind == "query":
-                    await fetch_from_query(name, data["query"])
+                    await fetch_from_query(name, data["query"], model=selected_model)
                 else:
                     await fetch_from_company(
-                        name, data["careers_url"], data.get("scan_query")
+                        name, data["careers_url"], data.get("scan_query"), model=selected_model
                     )
 
                 new = await get_new_jobs_since(fetch_start)
@@ -669,6 +679,7 @@ class AppState(rx.State):
                 to_date_str = self.to_date
                 fetched_from_date_str = self.fetched_from_date
                 fetched_to_date_str = self.fetched_to_date
+                selected_model = self.selected_model or None
                 self.running = "match"
                 self.progress = 0.05
                 self.status_text = "Loading jobs for matching…"
@@ -689,6 +700,7 @@ class AppState(rx.State):
                 for_date=_match_date,
                 batch_size=match_batch_size,
                 companies=match_companies or None,
+                model=selected_model,
             )
 
             if count == 0:

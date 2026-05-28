@@ -14,7 +14,14 @@ from services.usage_callback import UsageCallbackHandler
 logger = logging.getLogger("job-finder")
 
 
-async def create_llm_agent(checkpointer: Checkpointer, system_prompt: str):
+async def create_llm_agent(
+    checkpointer: Checkpointer,
+    system_prompt: str,
+    model: str | None = None,
+):
+    model_str = model or settings.LLM_MODEL
+    provider = model_str.split(":")[0]
+
     client = MultiServerMCPClient(
         connections={
             "job_finder": {
@@ -27,13 +34,13 @@ async def create_llm_agent(checkpointer: Checkpointer, system_prompt: str):
 
     tools = []
 
-    if settings.llm_provider == "lmstudio":
+    if provider == "lmstudio":
         tools = [
             {"type": "mcp", "server_label": "playwright"},
             {"type": "mcp", "server_label": "job_finder"},
         ]
 
-    if settings.llm_provider == "anthropic":
+    if provider == "anthropic":
         tools.append(
             {
                 "type": "web_search_20260209",
@@ -42,12 +49,12 @@ async def create_llm_agent(checkpointer: Checkpointer, system_prompt: str):
             }
         )
 
-    if settings.llm_provider == "openai":
+    if provider == "openai":
         tools.append({"type": "web_search"})
 
-    logger.info("Initializing LLM agent")
+    logger.info(f"Initializing LLM agent | model: {model_str}")
     return create_agent(
-        model=settings.llm_client,
+        model=settings.get_llm_client(model_str),
         tools=tools,
         name="Job Finder Agent",
         system_prompt=system_prompt,
@@ -56,15 +63,18 @@ async def create_llm_agent(checkpointer: Checkpointer, system_prompt: str):
 
 
 async def invoke_agent(
-    query: str, system_prompt: str, pipeline: str | None = None
+    query: str,
+    system_prompt: str,
+    pipeline: str | None = None,
+    model: str | None = None,
 ) -> bool:
     preview = query[:120].replace("\n", " ")
-    logger.info(f"Invoking agent | query: {preview}{'…' if len(query) > 120 else ''}")
+    logger.info(f"Invoking agent | model: {model or settings.LLM_MODEL} | query: {preview}{'…' if len(query) > 120 else ''}")
 
     async with AsyncSqliteSaver.from_conn_string(
         settings.CHECKPOINTER_DATABASE_PATH
     ) as checkpointer:
-        agent = await create_llm_agent(checkpointer, system_prompt)
+        agent = await create_llm_agent(checkpointer, system_prompt, model=model)
 
         config = RunnableConfig(
             configurable={"thread_id": str(uuid4())},
