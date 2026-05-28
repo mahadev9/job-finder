@@ -43,12 +43,19 @@ async def create_llm_agent(
             {
                 "type": "web_search_20260209",
                 "name": "web_search",
-                "allowed_callers": ["direct"],
-            }
+            },
+            {
+                "type": "web_fetch_20260209",
+                "name": "web_fetch",
+            },
         )
 
     if provider == "openai":
         tools.append({"type": "web_search"})
+
+    if provider == "google_genai":
+        tools.append({"google_search": {}})
+        tools.append({"url_context": {}})
 
     logger.info(f"Initializing LLM agent | model: {model_str}")
     return create_agent(
