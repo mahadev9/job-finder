@@ -36,6 +36,9 @@ For each job you find:
 {positive_clause}
 {negative_clause}
 
+Only save jobs based in the United States. Skip any listing where the location is
+outside the US (international on-site, non-US remote, etc.).
+
 If a page requires navigation, follow links to individual job listings to get the direct URL.
 Stop after saving all relevant jobs from the given source.
 """
@@ -54,7 +57,8 @@ You are a job matching agent evaluating job listings for a specific candidate.
 ## Scoring Rubric
 
 Score each job on a **0-10 scale** using the four components below.
-Be STRICT — a perfect 10 means an ideal match in every dimension. Reserve 8+ for near-perfect fits.
+Score generously but honestly — reserve 9+ for near-perfect fits and give reasonable
+credit for adjacent skills and partial matches.
 
 ### Components (max sum = 10)
 
@@ -91,7 +95,13 @@ Candidate has ~4 years of total professional experience (2 yrs SWE at Optum + ~2
 
 ### Location (0-1)
 - NYC / hybrid OR US remote / anywhere in US → 1.0
-- International remote (non-US) → 0.0
+- International / non-US remote → 0.0 AND override status to "low_match" regardless of
+  total score (note "Non-US location" in the reason field)
+
+### Non-US location override
+If the job is located outside the United States (international on-site, non-US remote,
+or any non-US location), override status to "low_match" regardless of score.
+Note "Non-US location" in the reason field.
 
 ### Job staleness
 Today is {today}.
@@ -144,7 +154,7 @@ save_matched_job(company="FinTechCo", role="Software Engineer", score=4.4,
   Location fits but the stack is entirely outside candidate's expertise. Low priority.",
   status="low_match")
 
-**Example D — Seniority reach (score: 5.8)**
+**Example D — Seniority reach (score: 7.4)**
 Job: Senior ML Engineer at Google DeepMind | TensorFlow, JAX, LLM research, US remote
 - Role alignment: 3.5 (ML Engineer, strong archetype)
 - Tech stack: 2.0 (PyTorch/HuggingFace adjacent but JAX-heavy; not a direct stack match)
@@ -166,7 +176,7 @@ save_matched_job(company="Meta", role="Product Manager", score=1.0,
   Role alignment is zero; saved as low_match for record-keeping.",
   status="low_match")
 
-**Example F — Overqualified (score: 3.5)**
+**Example F — Overqualified (score: 6.6)**
 Job: Junior AI Engineer at FinTechStartup | Python, ML, LangChain, US remote
 - Role alignment: 3.5 (AI Engineer archetype)
 - Tech stack: 2.0 (LangChain match)
@@ -179,14 +189,27 @@ save_matched_job(company="FinTechStartup", role="Junior AI Engineer", score=6.6,
   scored near zero; included for completeness but low priority.",
   status="pending")
 
+**Example G — Non-US override**
+Job: AI Engineer at TechCo Berlin | LangChain, RAG, Germany (on-site)
+- Role alignment: 3.8
+- Tech stack: 2.6
+- Seniority: 1.9
+- Location: 0.0 (Germany — non-US) → status override to "low_match"
+- Total: 8.3 but status="low_match"
+save_matched_job(company="TechCo Berlin", role="AI Engineer", score=8.3,
+  role_link="<url>", reason="Strong archetype and stack fit, but Non-US location (Germany).
+  Status overridden to low_match per location policy.",
+  status="low_match")
+
 ## Instructions
 
 Process every job in the list. For each one:
 1. Compute the score component-by-component
-2. If score ≥ 5.0 → save_matched_job(..., status="pending")
-3. If score < 5.0 → save_matched_job(..., status="low_match")
-4. Save ALL jobs — do not skip any
-5. reason field: 2-3 sentences — what matched, what didn't, why this exact score
-6. role_link: use the URL from the job list exactly as given — never fabricate it
-7. Do NOT stop early — process every single job in the list
+2. If job is non-US → save_matched_job(..., status="low_match") regardless of score
+3. Else if score ≥ 5.0 → save_matched_job(..., status="pending")
+4. Else → save_matched_job(..., status="low_match")
+5. Save ALL jobs — do not skip any
+6. reason field: 2-3 sentences — what matched, what didn't, why this exact score
+7. role_link: use the URL from the job list exactly as given — never fabricate it
+8. Do NOT stop early — process every single job in the list
 """
