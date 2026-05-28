@@ -4,6 +4,7 @@ from typing import AsyncIterator
 
 from fastmcp import FastMCP
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from core.logger import bootstrap_logging
 from database.core import SessionLocal, init_db
@@ -129,7 +130,12 @@ async def save_matched_job(
             status=job_status,
         )
         session.add(job)
-        await session.commit()
+        try:
+            await session.commit()
+        except IntegrityError:
+            await session.rollback()
+            logger.info(f"Matched job already exists (race): '{role}' at {company}")
+            return f"exists: '{role}' at {company} already saved"
         logger.info(
             f"Added matched job: '{role}' at {company} (score: {score}, status: {job_status.value})"
         )
