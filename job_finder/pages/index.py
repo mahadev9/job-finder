@@ -153,6 +153,59 @@ def navbar() -> rx.Component:
 # Pipeline section
 
 
+def _search_popover_content(
+    items_var,
+    selected_var,
+    search_var,
+    on_search,
+    on_toggle,
+    on_clear,
+    placeholder: str,
+) -> rx.Component:
+    return rx.popover.content(
+        rx.vstack(
+            rx.input(
+                placeholder=placeholder,
+                value=search_var,
+                on_change=on_search,
+                size="2",
+                width="100%",
+            ),
+            rx.button(
+                "Clear All",
+                on_click=on_clear,
+                variant="ghost",
+                size="1",
+                color_scheme="gray",
+                width="100%",
+            ),
+            rx.scroll_area(
+                rx.vstack(
+                    rx.foreach(
+                        items_var,
+                        lambda item: rx.checkbox(
+                            item,
+                            checked=selected_var.contains(item),
+                            on_change=on_toggle(item),
+                            size="2",
+                        ),
+                    ),
+                    align="start",
+                    spacing="2",
+                    min_width="180px",
+                    padding_right="8px",
+                ),
+                max_height="400px",
+                type="auto",
+            ),
+            spacing="4",
+            align="start",
+        ),
+        side="bottom",
+        align="start",
+    )
+
+
 def fetch_card() -> rx.Component:
     return rx.card(
         rx.vstack(
@@ -167,8 +220,65 @@ def fetch_card() -> rx.Component:
                 size="2",
                 color_scheme="gray",
             ),
-            rx.spacer(),
             rx.hstack(
+                rx.hstack(
+                    rx.vstack(
+                        rx.text("Companies", size="1", color_scheme="gray"),
+                        rx.popover.root(
+                            rx.popover.trigger(
+                                rx.button(
+                                    AppState.fetch_companies_label,
+                                    rx.icon("chevron-down", size=12),
+                                    variant="surface",
+                                    size="2",
+                                    min_width="160px",
+                                    justify="between",
+                                    disabled=AppState.is_running,
+                                )
+                            ),
+                            _search_popover_content(
+                                AppState.filtered_fetch_companies,
+                                AppState.fetch_companies,
+                                AppState.fetch_companies_search,
+                                AppState.set_fetch_companies_search,
+                                AppState.toggle_fetch_company,
+                                AppState.clear_fetch_companies,
+                                "Search companies…",
+                            ),
+                        ),
+                        spacing="1",
+                        align="start",
+                    ),
+                    rx.vstack(
+                        rx.text("Queries", size="1", color_scheme="gray"),
+                        rx.popover.root(
+                            rx.popover.trigger(
+                                rx.button(
+                                    AppState.fetch_queries_label,
+                                    rx.icon("chevron-down", size=12),
+                                    variant="surface",
+                                    size="2",
+                                    min_width="160px",
+                                    justify="between",
+                                    disabled=AppState.is_running,
+                                )
+                            ),
+                            _search_popover_content(
+                                AppState.filtered_fetch_queries,
+                                AppState.fetch_queries,
+                                AppState.fetch_queries_search,
+                                AppState.set_fetch_queries_search,
+                                AppState.toggle_fetch_query,
+                                AppState.clear_fetch_queries,
+                                "Search queries…",
+                            ),
+                        ),
+                        spacing="1",
+                        align="start",
+                    ),
+                    spacing="2",
+                    align="end",
+                ),
                 rx.spacer(),
                 rx.button(
                     rx.icon("search", size=14),
@@ -179,11 +289,13 @@ def fetch_card() -> rx.Component:
                     size="2",
                     variant="solid",
                 ),
+                align="end",
                 width="100%",
             ),
             width="100%",
             height="100%",
             align="start",
+            spacing="3",
         ),
         width="100%",
         flex="1",
@@ -247,32 +359,14 @@ def match_card() -> rx.Component:
                                     disabled=AppState.is_running,
                                 )
                             ),
-                            rx.popover.content(
-                                rx.scroll_area(
-                                    rx.vstack(
-                                        rx.foreach(
-                                            AppState.distinct_fetched_companies,
-                                            lambda c: rx.checkbox(
-                                                c,
-                                                checked=AppState.match_companies.contains(
-                                                    c
-                                                ),
-                                                on_change=AppState.toggle_match_company(
-                                                    c
-                                                ),
-                                                size="2",
-                                            ),
-                                        ),
-                                        align="start",
-                                        spacing="2",
-                                        min_width="180px",
-                                        padding_right="8px",
-                                    ),
-                                    max_height="200px",
-                                    type="auto",
-                                ),
-                                side="bottom",
-                                align="start",
+                            _search_popover_content(
+                                AppState.filtered_match_companies,
+                                AppState.match_companies,
+                                AppState.match_companies_search,
+                                AppState.set_match_companies_search,
+                                AppState.toggle_match_company,
+                                AppState.clear_match_companies,
+                                "Search companies…",
                             ),
                         ),
                         spacing="1",
@@ -529,17 +623,26 @@ def fetched_jobs_section() -> rx.Component:
             ),
             rx.spacer(),
             rx.hstack(
-                rx.select.root(
-                    rx.select.trigger(placeholder="All Companies", size="2"),
-                    rx.select.content(
-                        rx.select.item("All Companies", value="all"),
-                        rx.foreach(
-                            AppState.distinct_fetched_companies,
-                            lambda c: rx.select.item(c, value=c),
-                        ),
+                rx.popover.root(
+                    rx.popover.trigger(
+                        rx.button(
+                            AppState.fetched_company_filter_label,
+                            rx.icon("chevron-down", size=12),
+                            variant="surface",
+                            size="2",
+                            min_width="160px",
+                            justify="between",
+                        )
                     ),
-                    value=AppState.fetched_company_filter,
-                    on_change=AppState.set_fetched_company_filter,
+                    _search_popover_content(
+                        AppState.filtered_distinct_fetched_companies,
+                        AppState.fetched_company_filter,
+                        AppState.fetched_company_filter_search,
+                        AppState.set_fetched_company_filter_search,
+                        AppState.toggle_fetched_company_filter,
+                        AppState.clear_fetched_company_filter,
+                        "Search companies…",
+                    ),
                 ),
                 rx.vstack(
                     rx.text("From", size="1", color_scheme="gray"),
@@ -717,17 +820,26 @@ def jobs_section() -> rx.Component:
             ),
             rx.spacer(),
             rx.hstack(
-                rx.select.root(
-                    rx.select.trigger(placeholder="All Companies", size="2"),
-                    rx.select.content(
-                        rx.select.item("All Companies", value="all"),
-                        rx.foreach(
-                            AppState.distinct_companies,
-                            lambda c: rx.select.item(c, value=c),
-                        ),
+                rx.popover.root(
+                    rx.popover.trigger(
+                        rx.button(
+                            AppState.company_filter_label,
+                            rx.icon("chevron-down", size=12),
+                            variant="surface",
+                            size="2",
+                            min_width="160px",
+                            justify="between",
+                        )
                     ),
-                    value=AppState.company_filter,
-                    on_change=AppState.set_company_filter,
+                    _search_popover_content(
+                        AppState.filtered_distinct_companies,
+                        AppState.company_filter,
+                        AppState.company_filter_search,
+                        AppState.set_company_filter_search,
+                        AppState.toggle_company_filter,
+                        AppState.clear_company_filter,
+                        "Search companies…",
+                    ),
                 ),
                 rx.select.root(
                     rx.select.trigger(placeholder="All Statuses", size="2"),

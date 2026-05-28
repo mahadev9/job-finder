@@ -82,9 +82,14 @@ async def fetch_from_company(
 # ── Iterable steps (used by UI for progress) ─────────────────────────────────
 
 
-async def iter_fetch_steps() -> AsyncIterator[tuple[str, str, dict]]:
+async def iter_fetch_steps(
+    companies: list[str] | None = None,
+    queries: list[str] | None = None,
+) -> AsyncIterator[tuple[str, str, dict]]:
     for q in await get_enabled_queries():
-        yield q["name"], "query", q
+        if queries is None or q["name"] in queries:
+            yield q["name"], "query", q
 
     for c in await get_enabled_companies():
-        yield c["name"], "company", c
+        if companies is None or c["name"] in companies:
+            yield c["name"], "company", c

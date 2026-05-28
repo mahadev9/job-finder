@@ -8,7 +8,13 @@ from core.config import settings
 from core.logger import bootstrap_logging
 from database.core import init_db
 from database.models.matched_jobs import JobStatus
-from services.fetch_jobs import fetch_from_company, fetch_from_query, iter_fetch_steps
+from services.fetch_jobs import (
+    fetch_from_company,
+    fetch_from_query,
+    get_enabled_companies,
+    get_enabled_queries,
+    iter_fetch_steps,
+)
 from services.match_jobs import run_match_pipeline
 from services.queries import (
     bulk_update_matched_job_status,
@@ -119,7 +125,8 @@ class AppState(rx.State):
 
     # Matched jobs filters
     status_filter: str = "all"
-    company_filter: str = "all"
+    company_filter: list[str] = []
+    company_filter_search: str = ""
     from_date: str = ""
     to_date: str = ""
     match_date: str = ""
@@ -127,13 +134,23 @@ class AppState(rx.State):
 
     # Match pipeline options
     match_companies: list[str] = []
+    match_companies_search: str = ""
+
+    # Fetch pipeline options
+    fetch_available_companies: list[str] = []
+    fetch_available_queries: list[str] = []
+    fetch_companies: list[str] = []
+    fetch_queries: list[str] = []
+    fetch_companies_search: str = ""
+    fetch_queries_search: str = ""
 
     # Matched jobs sort
     jobs_sort_col: str = "score"
     jobs_sort_asc: bool = False
 
     # Fetched jobs filters
-    fetched_company_filter: str = "all"
+    fetched_company_filter: list[str] = []
+    fetched_company_filter_search: str = ""
     fetched_from_date: str = ""
     fetched_to_date: str = ""
 
@@ -208,14 +225,69 @@ class AppState(rx.State):
         return f"{n} companies"
 
     @rx.var
+    def fetch_companies_label(self) -> str:
+        n = len(self.fetch_companies)
+        if n == 0:
+            return "All Companies"
+        if n == 1:
+            return self.fetch_companies[0]
+        return f"{n} companies"
+
+    @rx.var
+    def fetch_queries_label(self) -> str:
+        n = len(self.fetch_queries)
+        if n == 0:
+            return "All Queries"
+        if n == 1:
+            return self.fetch_queries[0]
+        return f"{n} queries"
+
+    @rx.var
+    def filtered_fetch_companies(self) -> list[str]:
+        q = self.fetch_companies_search.lower()
+        if not q:
+            return self.fetch_available_companies
+        return [c for c in self.fetch_available_companies if q in c.lower()]
+
+    @rx.var
+    def filtered_fetch_queries(self) -> list[str]:
+        q = self.fetch_queries_search.lower()
+        if not q:
+            return self.fetch_available_queries
+        return [c for c in self.fetch_available_queries if q in c.lower()]
+
+    @rx.var
+    def filtered_match_companies(self) -> list[str]:
+        q = self.match_companies_search.lower()
+        if not q:
+            return self.distinct_fetched_companies
+        return [c for c in self.distinct_fetched_companies if q in c.lower()]
+
+    @rx.var
     def distinct_companies(self) -> list[str]:
         return sorted({j.company for j in self.jobs})
 
     @rx.var
+    def company_filter_label(self) -> str:
+        n = len(self.company_filter)
+        if n == 0:
+            return "All Companies"
+        if n == 1:
+            return self.company_filter[0]
+        return f"{n} companies"
+
+    @rx.var
+    def filtered_distinct_companies(self) -> list[str]:
+        q = self.company_filter_search.lower()
+        if not q:
+            return self.distinct_companies
+        return [c for c in self.distinct_companies if q in c.lower()]
+
+    @rx.var
     def display_jobs(self) -> list[JobRow]:
-        if self.company_filter == "all":
+        if not self.company_filter:
             return self.jobs
-        return [j for j in self.jobs if j.company == self.company_filter]
+        return [j for j in self.jobs if j.company in self.company_filter]
 
     @rx.var
     def jobs_page_items(self) -> list[JobRow]:
@@ -242,11 +314,27 @@ class AppState(rx.State):
         return sorted({j.company for j in self.fetched_jobs})
 
     @rx.var
+    def fetched_company_filter_label(self) -> str:
+        n = len(self.fetched_company_filter)
+        if n == 0:
+            return "All Companies"
+        if n == 1:
+            return self.fetched_company_filter[0]
+        return f"{n} companies"
+
+    @rx.var
+    def filtered_distinct_fetched_companies(self) -> list[str]:
+        q = self.fetched_company_filter_search.lower()
+        if not q:
+            return self.distinct_fetched_companies
+        return [c for c in self.distinct_fetched_companies if q in c.lower()]
+
+    @rx.var
     def display_fetched_jobs(self) -> list[FetchedJobRow]:
-        if self.fetched_company_filter == "all":
+        if not self.fetched_company_filter:
             return self.fetched_jobs
         return [
-            j for j in self.fetched_jobs if j.company == self.fetched_company_filter
+            j for j in self.fetched_jobs if j.company in self.fetched_company_filter
         ]
 
     @rx.var
@@ -279,6 +367,12 @@ class AppState(rx.State):
         bootstrap_logging()
         await init_db()
         self.match_date = str(date.today())
+        self.fetch_available_companies = [
+            c["name"] for c in await get_enabled_companies()
+        ]
+        self.fetch_available_queries = [
+            q["name"] for q in await get_enabled_queries()
+        ]
         await self.load_jobs()
         await self.load_fetched_jobs()
 
@@ -295,21 +389,31 @@ class AppState(rx.State):
 
     async def set_status_filter(self, value: str):
         self.status_filter = value
-        self.company_filter = "all"
+        self.company_filter = []
         await self.load_jobs()
 
-    def set_company_filter(self, value: str):
-        self.company_filter = value
+    def toggle_company_filter(self, company: str, checked: bool):
+        if checked and company not in self.company_filter:
+            self.company_filter = [*self.company_filter, company]
+        elif not checked:
+            self.company_filter = [c for c in self.company_filter if c != company]
         self.jobs_page = 0
+
+    def clear_company_filter(self):
+        self.company_filter = []
+        self.jobs_page = 0
+
+    def set_company_filter_search(self, value: str):
+        self.company_filter_search = value
 
     async def set_from_date(self, value: str):
         self.from_date = value
-        self.company_filter = "all"
+        self.company_filter = []
         await self.load_jobs()
 
     async def set_to_date(self, value: str):
         self.to_date = value
-        self.company_filter = "all"
+        self.company_filter = []
         await self.load_jobs()
 
     def set_match_date(self, value: str):
@@ -326,6 +430,36 @@ class AppState(rx.State):
 
     def set_match_companies(self, value: list[str]):
         self.match_companies = value
+
+    def set_match_companies_search(self, value: str):
+        self.match_companies_search = value
+
+    def toggle_fetch_company(self, company: str, checked: bool):
+        if checked and company not in self.fetch_companies:
+            self.fetch_companies = [*self.fetch_companies, company]
+        elif not checked:
+            self.fetch_companies = [c for c in self.fetch_companies if c != company]
+
+    def toggle_fetch_query(self, query: str, checked: bool):
+        if checked and query not in self.fetch_queries:
+            self.fetch_queries = [*self.fetch_queries, query]
+        elif not checked:
+            self.fetch_queries = [q for q in self.fetch_queries if q != query]
+
+    def set_fetch_companies_search(self, value: str):
+        self.fetch_companies_search = value
+
+    def set_fetch_queries_search(self, value: str):
+        self.fetch_queries_search = value
+
+    def clear_fetch_companies(self):
+        self.fetch_companies = []
+
+    def clear_fetch_queries(self):
+        self.fetch_queries = []
+
+    def clear_match_companies(self):
+        self.match_companies = []
 
     async def update_job_status(self, job_id: int, status: str):
         await bulk_update_matched_job_status({job_id: JobStatus(status)})
@@ -364,18 +498,30 @@ class AppState(rx.State):
         self.fetched_jobs = [_to_fetched_row(j) for j in jobs]
         self.fetched_page = 0
 
-    def set_fetched_company_filter(self, value: str):
-        self.fetched_company_filter = value
+    def toggle_fetched_company_filter(self, company: str, checked: bool):
+        if checked and company not in self.fetched_company_filter:
+            self.fetched_company_filter = [*self.fetched_company_filter, company]
+        elif not checked:
+            self.fetched_company_filter = [
+                c for c in self.fetched_company_filter if c != company
+            ]
         self.fetched_page = 0
+
+    def clear_fetched_company_filter(self):
+        self.fetched_company_filter = []
+        self.fetched_page = 0
+
+    def set_fetched_company_filter_search(self, value: str):
+        self.fetched_company_filter_search = value
 
     async def set_fetched_from_date(self, value: str):
         self.fetched_from_date = value
-        self.fetched_company_filter = "all"
+        self.fetched_company_filter = []
         await self.load_fetched_jobs()
 
     async def set_fetched_to_date(self, value: str):
         self.fetched_to_date = value
-        self.fetched_company_filter = "all"
+        self.fetched_company_filter = []
         await self.load_fetched_jobs()
 
     def jobs_prev_page(self):
@@ -420,7 +566,14 @@ class AppState(rx.State):
     @rx.event(background=True)
     async def run_fetch(self):
         logger = logging.getLogger("job-finder")
-        steps = [s async for s in iter_fetch_steps()]
+        async with self:
+            fetch_companies = list(self.fetch_companies) or None
+            fetch_queries = list(self.fetch_queries) or None
+        steps = [
+            s async for s in iter_fetch_steps(
+                companies=fetch_companies, queries=fetch_queries
+            )
+        ]
         fetch_start = datetime.now(settings.tz)
 
         async with self:
