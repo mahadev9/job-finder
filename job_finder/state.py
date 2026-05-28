@@ -745,10 +745,10 @@ class UsageRow(BaseModel):
     request_id: str
     model: str
     pipeline: str
-    input_tokens: int
-    output_tokens: int
-    reasoning_tokens: int
-    total_tokens: int
+    input_tokens: str
+    output_tokens: str
+    reasoning_tokens: str
+    total_tokens: str
     created_at: str
 
 
@@ -764,6 +764,22 @@ class UsageState(rx.State):
     usage_pipeline_filter: str = "all"
     usage_from_date: str = ""
     usage_to_date: str = ""
+
+    @rx.var
+    def usage_total_input_fmt(self) -> str:
+        return f"{self.usage_total_input:,}"
+
+    @rx.var
+    def usage_total_output_fmt(self) -> str:
+        return f"{self.usage_total_output:,}"
+
+    @rx.var
+    def usage_total_tokens_fmt(self) -> str:
+        return f"{self.usage_total_tokens:,}"
+
+    @rx.var
+    def usage_total_reasoning_fmt(self) -> str:
+        return f"{self.usage_total_reasoning:,}"
 
     @rx.var
     def usage_page_count(self) -> int:
@@ -794,10 +810,10 @@ class UsageState(rx.State):
                 request_id=(r.request_id or "")[:8],
                 model=r.model,
                 pipeline=r.pipeline or "—",
-                input_tokens=r.input_tokens,
-                output_tokens=r.output_tokens,
-                reasoning_tokens=r.reasoning_tokens,
-                total_tokens=r.total_tokens,
+                input_tokens=f"{r.input_tokens:,}",
+                output_tokens=f"{r.output_tokens:,}",
+                reasoning_tokens=f"{r.reasoning_tokens:,}",
+                total_tokens=f"{r.total_tokens:,}",
                 created_at=r.created_at.astimezone(settings.tz).strftime("%b %d, %H:%M"),
             )
             for r in rows

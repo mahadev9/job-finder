@@ -113,10 +113,10 @@ def usage() -> rx.Component:
                 # Stat cards
                 rx.hstack(
                     _stat_card("Total Calls", UsageState.usage_total_count, "gray"),
-                    _stat_card("Input Tokens", UsageState.usage_total_input, "blue"),
-                    _stat_card("Output Tokens", UsageState.usage_total_output, "violet"),
-                    _stat_card("Reasoning Tokens", UsageState.usage_total_reasoning, "amber"),
-                    _stat_card("Total Tokens", UsageState.usage_total_tokens, "indigo"),
+                    _stat_card("Input Tokens", UsageState.usage_total_input_fmt, "blue"),
+                    _stat_card("Output Tokens", UsageState.usage_total_output_fmt, "violet"),
+                    _stat_card("Reasoning Tokens", UsageState.usage_total_reasoning_fmt, "amber"),
+                    _stat_card("Total Tokens", UsageState.usage_total_tokens_fmt, "indigo"),
                     spacing="4",
                     width="100%",
                     wrap="wrap",
