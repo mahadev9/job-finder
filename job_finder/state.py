@@ -202,7 +202,7 @@ class AppState(rx.State):
 
     @rx.var
     def job_count_label(self) -> str:
-        n = len(self.jobs)
+        n = len(self.display_jobs)
         return f"{n} job{'s' if n != 1 else ''}"
 
     @rx.var
@@ -211,7 +211,7 @@ class AppState(rx.State):
 
     @rx.var
     def fetched_job_count_label(self) -> str:
-        n = len(self.fetched_jobs)
+        n = len(self.display_fetched_jobs)
         return f"{n} job{'s' if n != 1 else ''}"
 
     @rx.var
