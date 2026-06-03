@@ -23,10 +23,13 @@ async def _load_config() -> dict:
 
 
 async def _fetch_system_prompt() -> str:
-    tf = (await _load_config()).get("title_filter", {})
+    config = await _load_config()
+    tf = config.get("title_filter", {})
+    lf = config.get("location_filter")
     return build_fetch_system_prompt(
         positive=tf.get("positive"),
         negative=tf.get("negative"),
+        location_filter=lf,
     )
 
 

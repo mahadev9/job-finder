@@ -141,6 +141,61 @@ title_filter:
     - "Mid-Level"
     - "Junior"
 
+location_filter:
+  allow:
+    # US remote variants
+    - "Remote"
+    - "United States"
+    - "USA"
+    - "Anywhere in the US"
+    - "US Remote"
+    - "Remote, US"
+    - "Remote - US"
+    - "Remote (US)"
+    # Major tech-hub cities (catches "New York, NY" style listings)
+    - "New York"
+    - "San Francisco"
+    - "Bay Area"
+    - "Seattle"
+    - "Austin"
+    - "Boston"
+    - "Chicago"
+    - "Los Angeles"
+    - "Atlanta"
+    - "Denver"
+    - "Miami"
+    - "Raleigh"
+    - "Dallas"
+    - "Houston"
+    # State abbreviations (catches ", NY" / ", CA" suffixes)
+    - ", NY"
+    - ", CA"
+    - ", WA"
+    - ", TX"
+    - ", MA"
+    - ", IL"
+    - ", GA"
+    - ", CO"
+    - ", FL"
+    - ", NC"
+    - ", VA"
+    - ", DC"
+  block:
+    - "India"
+    - "Bengaluru"
+    - "United Kingdom"
+    - "London"
+    - "Germany"
+    - "France"
+    - "Singapore"
+    - "Japan"
+    - "Brazil"
+    - "Australia"
+    - "Canada"
+    - "Netherlands"
+    - "Poland"
+    - "Israel"
+
 # -- Search queries --
 # Each query triggers a WebSearch. Use site: to filter by portal.
 # The scanner extracts title, URL, and company from results.

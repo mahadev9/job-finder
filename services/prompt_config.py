@@ -1,5 +1,7 @@
 def build_fetch_system_prompt(
-    positive: list[str] | None = None, negative: list[str] | None = None
+    positive: list[str] | None = None,
+    negative: list[str] | None = None,
+    location_filter: dict | None = None,
 ) -> str:
     if positive:
         positive_clause = (
@@ -21,6 +23,28 @@ def build_fetch_system_prompt(
             "Skip listings for non-technical roles (HR, finance, marketing, etc.)."
         )
 
+    if location_filter:
+        allow = location_filter.get("allow", [])
+        block = location_filter.get("block", [])
+        parts = []
+        if block:
+            parts.append(
+                f"Reject any job whose location contains any of these (case-insensitive): "
+                f"{', '.join(block)}."
+            )
+        if allow:
+            parts.append(
+                f"Only save jobs whose location contains at least one of: "
+                f"{', '.join(allow)}. "
+                "If a job has no location listed, let it through."
+            )
+        location_clause = " ".join(parts) if parts else ""
+    else:
+        location_clause = (
+            "Only save jobs based in the United States. Skip any listing where the location is "
+            "outside the US (international on-site, non-US remote, etc.)."
+        )
+
     return f"""
 You are a job listing extraction agent for a job finder application.
 
@@ -36,8 +60,7 @@ For each job you find:
 {positive_clause}
 {negative_clause}
 
-Only save jobs based in the United States. Skip any listing where the location is
-outside the US (international on-site, non-US remote, etc.).
+{location_clause}
 
 If a page requires navigation, follow links to individual job listings to get the direct URL.
 Stop after saving all relevant jobs from the given source.
