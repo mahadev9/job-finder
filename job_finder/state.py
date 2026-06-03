@@ -24,6 +24,7 @@ from services.queries import (
     get_matched_jobs,
     get_new_jobs_since,
     get_token_usage_page,
+    insert_job_manual,
 )
 
 
@@ -75,6 +76,22 @@ class FetchedJobRow(BaseModel):
     fetched_date: str
     fetched_ts: float = 0.0
     pipeline_ran: bool = False
+
+
+def _detect_portal(link: str) -> str:
+    l = link.lower()
+    for domain, name in [
+        ("greenhouse.io", "greenhouse"),
+        ("ashbyhq.com", "ashby"),
+        ("jobs.lever.co", "lever"),
+        ("linkedin.com", "linkedin"),
+        ("workable.com", "workable"),
+        ("wellfound.com", "wellfound"),
+        ("indeed.com", "indeed"),
+    ]:
+        if domain in l:
+            return name
+    return "manual"
 
 
 def _score_color(score: float) -> str:
@@ -166,6 +183,14 @@ class AppState(rx.State):
     # Fetched jobs sort
     fetched_sort_col: str = "fetched_ts"
     fetched_sort_asc: bool = False
+
+    # Manual job dialog
+    manual_job_open: bool = False
+    manual_job_company: str = ""
+    manual_job_role: str = ""
+    manual_job_portal: str = ""
+    manual_job_link: str = ""
+    manual_job_error: str = ""
 
     # Tables
     jobs: list[JobRow] = []
@@ -592,6 +617,55 @@ class AppState(rx.State):
             self.fetched_sort_col = col
             self.fetched_sort_asc = col == "company"
         self.fetched_page = 0
+
+    def set_manual_job_open(self, value: bool):
+        self.manual_job_open = value
+
+    def set_manual_job_company(self, value: str):
+        self.manual_job_company = value
+
+    def set_manual_job_role(self, value: str):
+        self.manual_job_role = value
+
+    def set_manual_job_portal(self, value: str):
+        self.manual_job_portal = value
+
+    def set_manual_job_link(self, value: str):
+        self.manual_job_link = value
+
+    def open_manual_job_dialog(self):
+        self.manual_job_company = ""
+        self.manual_job_role = ""
+        self.manual_job_portal = ""
+        self.manual_job_link = ""
+        self.manual_job_error = ""
+        self.manual_job_open = True
+
+    async def submit_manual_job(self):
+        company = self.manual_job_company.strip()
+        role = self.manual_job_role.strip()
+        link = self.manual_job_link.strip()
+        portal = self.manual_job_portal.strip() or _detect_portal(self.manual_job_link)
+
+        if not company:
+            self.manual_job_error = "Company is required."
+            return
+        if not role:
+            self.manual_job_error = "Role is required."
+            return
+        if not link:
+            self.manual_job_error = "Link is required."
+            return
+
+        ok, err = await insert_job_manual(company, role, link, portal)
+        if not ok:
+            self.manual_job_error = err
+            return
+
+        jobs = await get_fetched_jobs()
+        self.fetched_jobs = [_to_fetched_row(j) for j in jobs]
+        self.fetched_page = 0
+        self.manual_job_open = False
 
     def dismiss_result(self):
         self.result_message = ""

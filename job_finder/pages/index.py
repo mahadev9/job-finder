@@ -641,8 +641,106 @@ def fetched_job_row(job: Any) -> rx.Component:
     )
 
 
+def manual_job_dialog() -> rx.Component:
+    return rx.dialog.root(
+        rx.dialog.content(
+            rx.dialog.title("Add Job Manually"),
+            rx.vstack(
+                rx.vstack(
+                    rx.text("Company *", size="2", weight="medium"),
+                    rx.input(
+                        placeholder="e.g. Anthropic",
+                        value=AppState.manual_job_company,
+                        on_change=AppState.set_manual_job_company,
+                        size="2",
+                        width="100%",
+                    ),
+                    spacing="1",
+                    width="100%",
+                ),
+                rx.vstack(
+                    rx.text("Role *", size="2", weight="medium"),
+                    rx.input(
+                        placeholder="e.g. AI Engineer",
+                        value=AppState.manual_job_role,
+                        on_change=AppState.set_manual_job_role,
+                        size="2",
+                        width="100%",
+                    ),
+                    spacing="1",
+                    width="100%",
+                ),
+                rx.vstack(
+                    rx.text("Link *", size="2", weight="medium"),
+                    rx.input(
+                        placeholder="https://jobs.example.com/...",
+                        value=AppState.manual_job_link,
+                        on_change=AppState.set_manual_job_link,
+                        size="2",
+                        width="100%",
+                    ),
+                    spacing="1",
+                    width="100%",
+                ),
+                rx.vstack(
+                    rx.text("Portal", size="2", weight="medium"),
+                    rx.input(
+                        placeholder="Auto-detected from URL (e.g. greenhouse, ashby, linkedin)",
+                        value=AppState.manual_job_portal,
+                        on_change=AppState.set_manual_job_portal,
+                        size="2",
+                        width="100%",
+                    ),
+                    rx.text(
+                        "Leave blank to auto-detect from the link.",
+                        size="1",
+                        color_scheme="gray",
+                    ),
+                    spacing="1",
+                    width="100%",
+                ),
+                rx.cond(
+                    AppState.manual_job_error != "",
+                    rx.text(
+                        AppState.manual_job_error,
+                        size="2",
+                        color="var(--red-11)",
+                    ),
+                ),
+                rx.hstack(
+                    rx.dialog.close(
+                        rx.button(
+                            "Cancel",
+                            variant="soft",
+                            color_scheme="gray",
+                            size="2",
+                        ),
+                    ),
+                    rx.button(
+                        rx.icon("plus", size=14),
+                        "Add Job",
+                        on_click=AppState.submit_manual_job,
+                        color_scheme="indigo",
+                        size="2",
+                    ),
+                    spacing="3",
+                    justify="end",
+                    width="100%",
+                    padding_top="8px",
+                ),
+                spacing="4",
+                width="100%",
+            ),
+            max_width="480px",
+        ),
+        open=AppState.manual_job_open,
+        on_open_change=AppState.set_manual_job_open,
+    )
+
+
 def fetched_jobs_section() -> rx.Component:
     return rx.vstack(
+        manual_job_dialog(),
         rx.hstack(
             rx.heading("Fetched Jobs", size="5", weight="bold"),
             rx.badge(
@@ -653,6 +751,14 @@ def fetched_jobs_section() -> rx.Component:
             ),
             rx.spacer(),
             rx.hstack(
+                rx.button(
+                    rx.icon("plus", size=14),
+                    on_click=AppState.open_manual_job_dialog,
+                    variant="soft",
+                    color_scheme="indigo",
+                    size="2",
+                    title="Add job manually",
+                ),
                 rx.popover.root(
                     rx.popover.trigger(
                         rx.button(
@@ -911,11 +1017,11 @@ def jobs_section() -> rx.Component:
                     rx.hstack(
                         rx.text("0", size="1", color="var(--gray-9)"),
                         rx.slider(
-                            value=AppState.score_range,
+                            default_value=AppState.score_range,
                             min=0,
                             max=10,
                             step=1,
-                            on_change=AppState.set_score_range,
+                            on_value_commit=AppState.set_score_range,
                             color_scheme="violet",
                             size="1",
                             flex="1",

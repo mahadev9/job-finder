@@ -2,6 +2,7 @@ import logging
 from datetime import date, datetime, timedelta
 
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 
 from core.config import settings
 from database.core import SessionLocal
@@ -36,6 +37,23 @@ async def get_matched_jobs(
                 )
             )
         return list((await session.execute(stmt)).scalars().all())
+
+
+async def insert_job_manual(
+    company_name: str, role: str, link: str, portal: str
+) -> tuple[bool, str]:
+    async with SessionLocal() as session:
+        result = await session.execute(select(Job).where(Job.link == link))
+        if result.scalar_one_or_none():
+            return False, "A job with this link already exists."
+        session.add(Job(company_name=company_name, role=role, link=link, portal=portal))
+        try:
+            await session.commit()
+        except IntegrityError:
+            await session.rollback()
+            return False, "A job with this link already exists."
+        logger.info(f"Manually added job: '{role}' at {company_name} (portal: {portal})")
+        return True, ""
 
 
 async def get_new_jobs_since(since: datetime) -> list[Job]:
