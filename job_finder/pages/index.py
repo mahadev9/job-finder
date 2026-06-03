@@ -182,7 +182,34 @@ def _search_popover_content(
     on_toggle,
     on_clear,
     placeholder: str,
+    on_select_all=None,
 ) -> rx.Component:
+    action_row = rx.hstack(
+        rx.button(
+            "Clear All",
+            on_click=on_clear,
+            variant="ghost",
+            size="1",
+            color_scheme="gray",
+            flex="1",
+        ),
+        *(
+            [
+                rx.button(
+                    "Select All",
+                    on_click=on_select_all,
+                    variant="ghost",
+                    size="1",
+                    color_scheme="indigo",
+                    flex="1",
+                )
+            ]
+            if on_select_all is not None
+            else []
+        ),
+        width="100%",
+        spacing="1",
+    )
     return rx.popover.content(
         rx.vstack(
             rx.input(
@@ -192,14 +219,7 @@ def _search_popover_content(
                 size="2",
                 width="100%",
             ),
-            rx.button(
-                "Clear All",
-                on_click=on_clear,
-                variant="ghost",
-                size="1",
-                color_scheme="gray",
-                width="100%",
-            ),
+            action_row,
             rx.scroll_area(
                 rx.vstack(
                     rx.foreach(
@@ -265,6 +285,7 @@ def fetch_card() -> rx.Component:
                                 AppState.toggle_fetch_company,
                                 AppState.clear_fetch_companies,
                                 "Search companies…",
+                                AppState.select_all_fetch_companies,
                             ),
                         ),
                         spacing="1",
@@ -292,6 +313,7 @@ def fetch_card() -> rx.Component:
                                 AppState.toggle_fetch_query,
                                 AppState.clear_fetch_queries,
                                 "Search queries…",
+                                AppState.select_all_fetch_queries,
                             ),
                         ),
                         spacing="1",

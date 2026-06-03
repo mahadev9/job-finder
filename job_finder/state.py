@@ -27,7 +27,6 @@ from services.queries import (
     insert_job_manual,
 )
 
-
 STATUS_COLORS: dict[str, str] = {
     "pending": "amber",
     "interested": "violet",
@@ -261,7 +260,10 @@ class AppState(rx.State):
     @rx.var
     def fetch_companies_label(self) -> str:
         n = len(self.fetch_companies)
+        total = len(self.fetch_available_companies)
         if n == 0:
+            return "None selected"
+        if n == total:
             return "All Companies"
         if n == 1:
             return self.fetch_companies[0]
@@ -270,7 +272,10 @@ class AppState(rx.State):
     @rx.var
     def fetch_queries_label(self) -> str:
         n = len(self.fetch_queries)
+        total = len(self.fetch_available_queries)
         if n == 0:
+            return "None selected"
+        if n == total:
             return "All Queries"
         if n == 1:
             return self.fetch_queries[0]
@@ -417,12 +422,12 @@ class AppState(rx.State):
         self.selected_model = settings.LLM_MODEL
         self.available_models = settings.all_available_models
         self.match_date = str(datetime.now(settings.tz).date())
-        self.fetch_available_companies = [
-            c["name"] for c in await get_enabled_companies()
-        ]
-        self.fetch_available_queries = [
-            q["name"] for q in await get_enabled_queries()
-        ]
+        enabled_companies = await get_enabled_companies()
+        enabled_queries = await get_enabled_queries()
+        self.fetch_available_companies = [c["name"] for c in enabled_companies]
+        self.fetch_available_queries = [q["name"] for q in enabled_queries]
+        self.fetch_companies = list(self.fetch_available_companies)
+        self.fetch_queries = list(self.fetch_available_queries)
         await self.load_jobs()
         await self.load_fetched_jobs()
 
@@ -512,8 +517,14 @@ class AppState(rx.State):
     def clear_fetch_companies(self):
         self.fetch_companies = []
 
+    def select_all_fetch_companies(self):
+        self.fetch_companies = list(self.fetch_available_companies)
+
     def clear_fetch_queries(self):
         self.fetch_queries = []
+
+    def select_all_fetch_queries(self):
+        self.fetch_queries = list(self.fetch_available_queries)
 
     def clear_match_companies(self):
         self.match_companies = []
@@ -680,11 +691,12 @@ class AppState(rx.State):
     async def run_fetch(self):
         logger = logging.getLogger("job-finder")
         async with self:
-            fetch_companies = list(self.fetch_companies) or None
-            fetch_queries = list(self.fetch_queries) or None
+            fetch_companies = list(self.fetch_companies)
+            fetch_queries = list(self.fetch_queries)
             selected_model = self.selected_model or None
         steps = [
-            s async for s in iter_fetch_steps(
+            s
+            async for s in iter_fetch_steps(
                 companies=fetch_companies, queries=fetch_queries
             )
         ]
@@ -713,7 +725,10 @@ class AppState(rx.State):
                     await fetch_from_query(name, data["query"], model=selected_model)
                 else:
                     await fetch_from_company(
-                        name, data["careers_url"], data.get("scan_query"), model=selected_model
+                        name,
+                        data["careers_url"],
+                        data.get("scan_query"),
+                        model=selected_model,
                     )
 
                 completed += 1
@@ -739,7 +754,9 @@ class AppState(rx.State):
                 self.progress = 1.0
                 if was_stopped:
                     self.result_kind = "warning"
-                    self.result_message = f"Stopped after {completed}/{len(steps)} source(s)."
+                    self.result_message = (
+                        f"Stopped after {completed}/{len(steps)} source(s)."
+                    )
                 else:
                     self.result_kind = "success"
                     self.result_message = f"Fetched from {len(steps)} source(s)."
@@ -779,7 +796,9 @@ class AppState(rx.State):
             pipeline_state.start("match")
 
             _match_date = (
-                date.fromisoformat(match_date_str) if match_date_str else datetime.now(settings.tz).date()
+                date.fromisoformat(match_date_str)
+                if match_date_str
+                else datetime.now(settings.tz).date()
             )
 
             async def _on_batch(batch_num: int, total_batches: int) -> None:
@@ -818,8 +837,14 @@ class AppState(rx.State):
             status = status_filter if status_filter != "all" else None
             from_d = date.fromisoformat(from_date_str) if from_date_str else None
             to_d = date.fromisoformat(to_date_str) if to_date_str else None
-            fetched_from_d = date.fromisoformat(fetched_from_date_str) if fetched_from_date_str else None
-            fetched_to_d = date.fromisoformat(fetched_to_date_str) if fetched_to_date_str else None
+            fetched_from_d = (
+                date.fromisoformat(fetched_from_date_str)
+                if fetched_from_date_str
+                else None
+            )
+            fetched_to_d = (
+                date.fromisoformat(fetched_to_date_str) if fetched_to_date_str else None
+            )
             db_jobs = await get_matched_jobs(status, from_d, to_d)
             fetched = await get_fetched_jobs(fetched_from_d, fetched_to_d)
             async with self:
@@ -894,9 +919,13 @@ class UsageState(rx.State):
         return f"{start}–{end} of {self.usage_total_count}"
 
     async def _load(self) -> None:
-        pipeline = self.usage_pipeline_filter if self.usage_pipeline_filter != "all" else None
+        pipeline = (
+            self.usage_pipeline_filter if self.usage_pipeline_filter != "all" else None
+        )
         model = self.usage_model_filter if self.usage_model_filter != "all" else None
-        from_d = date.fromisoformat(self.usage_from_date) if self.usage_from_date else None
+        from_d = (
+            date.fromisoformat(self.usage_from_date) if self.usage_from_date else None
+        )
         to_d = date.fromisoformat(self.usage_to_date) if self.usage_to_date else None
         rows, total, agg = await get_token_usage_page(
             pipeline=pipeline,
@@ -916,7 +945,9 @@ class UsageState(rx.State):
                 output_tokens=f"{r.output_tokens:,}",
                 reasoning_tokens=f"{r.reasoning_tokens:,}",
                 total_tokens=f"{r.total_tokens:,}",
-                created_at=r.created_at.astimezone(settings.tz).strftime("%b %d, %H:%M"),
+                created_at=r.created_at.astimezone(settings.tz).strftime(
+                    "%b %d, %H:%M"
+                ),
             )
             for r in rows
         ]
