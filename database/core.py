@@ -22,6 +22,7 @@ SessionLocal: async_sessionmaker[AsyncSession] = async_sessionmaker(
 _ENSURE_INDEXES = [
     "CREATE INDEX IF NOT EXISTS ix_jobs_created_at ON jobs (created_at)",
     "CREATE INDEX IF NOT EXISTS ix_jobs_pipeline_ran_created_at ON jobs (pipeline_ran, created_at)",
+    "CREATE INDEX IF NOT EXISTS ix_jobs_pipeline_ran_created_by ON jobs (pipeline_ran, created_by, created_at)",
     "CREATE INDEX IF NOT EXISTS ix_matched_jobs_created_at ON matched_jobs (created_at)",
     "CREATE INDEX IF NOT EXISTS ix_matched_jobs_status_created_at ON matched_jobs (status, created_at)",
     "CREATE INDEX IF NOT EXISTS ix_matched_jobs_score_desc ON matched_jobs (score)",
@@ -31,6 +32,7 @@ _ENSURE_INDEXES = [
 
 _MIGRATIONS = [
     "ALTER TABLE jobs ADD COLUMN pipeline_ran BOOLEAN NOT NULL DEFAULT 0",
+    "ALTER TABLE jobs ADD COLUMN created_by TEXT NOT NULL DEFAULT 'system'",
     "ALTER TABLE matched_jobs ADD COLUMN status_changed_at DATETIME",
     "ALTER TABLE token_usage ADD COLUMN reasoning_tokens INTEGER NOT NULL DEFAULT 0",
     # Mark jobs as pipeline_ran if they already have a match in matched_jobs

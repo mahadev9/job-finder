@@ -20,6 +20,7 @@ class Job(Base):
         default=lambda: datetime.now(settings.tz),
     )
     pipeline_ran: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_by: Mapped[str] = mapped_column(String, nullable=False, default="system", server_default="system")
 
     __table_args__ = (
         UniqueConstraint("link", name="uq_jobs_link"),

@@ -46,7 +46,7 @@ async def insert_job_manual(
         result = await session.execute(select(Job).where(Job.link == link))
         if result.scalar_one_or_none():
             return False, "A job with this link already exists."
-        session.add(Job(company_name=company_name, role=role, link=link, portal=portal))
+        session.add(Job(company_name=company_name, role=role, link=link, portal=portal, created_by="user"))
         try:
             await session.commit()
         except IntegrityError:
@@ -67,6 +67,7 @@ async def get_new_jobs_since(since: datetime) -> list[Job]:
 async def get_unmatched_jobs(
     for_date: date | None = None,
     companies: list[str] | None = None,
+    created_by: str | None = None,
 ) -> list[Job]:
     async with SessionLocal() as session:
         stmt = (
@@ -82,6 +83,8 @@ async def get_unmatched_jobs(
             stmt = stmt.where(Job.created_at >= day_start, Job.created_at < day_end)
         if companies:
             stmt = stmt.where(Job.company_name.in_(companies))
+        if created_by:
+            stmt = stmt.where(Job.created_by == created_by)
         return list((await session.execute(stmt)).scalars().all())
 
 

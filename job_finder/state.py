@@ -75,6 +75,7 @@ class FetchedJobRow(BaseModel):
     fetched_date: str
     fetched_ts: float = 0.0
     pipeline_ran: bool = False
+    created_by: str = "system"
 
 
 def _detect_portal(link: str) -> str:
@@ -130,6 +131,7 @@ def _to_fetched_row(j) -> FetchedJobRow:
         fetched_date=j.created_at.strftime("%b %d, %Y") if j.created_at else "",
         fetched_ts=j.created_at.timestamp() if j.created_at else 0.0,
         pipeline_ran=j.pipeline_ran,
+        created_by=j.created_by,
     )
 
 
@@ -159,6 +161,7 @@ class AppState(rx.State):
     # Match pipeline options
     match_companies: list[str] = []
     match_companies_search: str = ""
+    match_created_by: str = "all"
 
     # Fetch pipeline options
     fetch_available_companies: list[str] = []
@@ -496,6 +499,9 @@ class AppState(rx.State):
     def set_match_companies_search(self, value: str):
         self.match_companies_search = value
 
+    def set_match_created_by(self, value: str):
+        self.match_created_by = value
+
     def toggle_fetch_company(self, company: str, checked: bool):
         if checked and company not in self.fetch_companies:
             self.fetch_companies = [*self.fetch_companies, company]
@@ -781,6 +787,7 @@ class AppState(rx.State):
                 match_date_str = self.match_date
                 match_batch_size = self.match_batch_size
                 match_companies = list(self.match_companies)
+                match_created_by = self.match_created_by
                 status_filter = self.status_filter
                 from_date_str = self.from_date
                 to_date_str = self.to_date
@@ -811,6 +818,7 @@ class AppState(rx.State):
                 for_date=_match_date,
                 batch_size=match_batch_size,
                 companies=match_companies or None,
+                created_by=match_created_by if match_created_by != "all" else None,
                 model=selected_model,
                 should_stop=pipeline_state.is_stop_requested,
             )

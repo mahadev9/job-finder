@@ -52,10 +52,11 @@ async def run_match_pipeline(
     for_date: date | None = None,
     batch_size: int = _BATCH_SIZE,
     companies: list[str] | None = None,
+    created_by: str | None = None,
     model: str | None = None,
     should_stop=None,
 ) -> tuple[int, bool]:
-    jobs = await get_unmatched_jobs(for_date=for_date, companies=companies)
+    jobs = await get_unmatched_jobs(for_date=for_date, companies=companies, created_by=created_by)
     if not jobs:
         logger.info("No jobs found for today — skipping match pipeline")
         return 0, False

@@ -388,6 +388,22 @@ def match_card() -> rx.Component:
                         align="start",
                     ),
                     rx.vstack(
+                        rx.text("Source", size="1", color_scheme="gray"),
+                        rx.select.root(
+                            rx.select.trigger(size="1"),
+                            rx.select.content(
+                                rx.select.item("All", value="all"),
+                                rx.select.item("Pipeline", value="system"),
+                                rx.select.item("Manual", value="user"),
+                            ),
+                            value=AppState.match_created_by,
+                            on_change=AppState.set_match_created_by,
+                            disabled=AppState.is_running,
+                        ),
+                        spacing="1",
+                        align="start",
+                    ),
+                    rx.vstack(
                         rx.text("Companies", size="1", color_scheme="gray"),
                         rx.popover.root(
                             rx.popover.trigger(
@@ -626,6 +642,14 @@ def fetched_job_row(job: Any) -> rx.Component:
         rx.table.cell(rx.text(job.role, size="2")),
         rx.table.cell(
             rx.badge(job.portal, variant="soft", color_scheme="indigo", size="1")
+        ),
+        rx.table.cell(
+            rx.cond(
+                job.created_by == "user",
+                rx.badge("Manual", variant="soft", color_scheme="violet", size="1"),
+                rx.badge("Pipeline", variant="soft", color_scheme="gray", size="1"),
+            ),
+            min_width="80px",
         ),
         rx.table.cell(
             rx.text(job.fetched_date, size="1", color_scheme="gray"),
@@ -872,6 +896,7 @@ def fetched_jobs_section() -> rx.Component:
                         ),
                         rx.table.column_header_cell("Role"),
                         rx.table.column_header_cell("Portal"),
+                        rx.table.column_header_cell("Source"),
                         sort_header(
                             "Fetched",
                             "fetched_ts",
