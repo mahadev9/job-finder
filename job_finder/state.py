@@ -254,8 +254,11 @@ class AppState(rx.State):
     @rx.var
     def match_companies_label(self) -> str:
         n = len(self.match_companies)
-        if n == 0:
+        total = len(self.distinct_fetched_companies)
+        if n == total:
             return "All Companies"
+        if n == 0:
+            return "None selected"
         if n == 1:
             return self.match_companies[0]
         return f"{n} companies"
@@ -312,8 +315,11 @@ class AppState(rx.State):
     @rx.var
     def company_filter_label(self) -> str:
         n = len(self.company_filter)
-        if n == 0:
+        total = len(self.distinct_companies)
+        if n == total:
             return "All Companies"
+        if n == 0:
+            return "None selected"
         if n == 1:
             return self.company_filter[0]
         return f"{n} companies"
@@ -335,9 +341,7 @@ class AppState(rx.State):
     @rx.var
     def display_jobs(self) -> list[JobRow]:
         lo, hi = self.score_range[0], self.score_range[1]
-        jobs = self.jobs
-        if self.company_filter:
-            jobs = [j for j in jobs if j.company in self.company_filter]
+        jobs = [j for j in self.jobs if j.company in self.company_filter]
         if lo > 0 or hi < 10:
             jobs = [j for j in jobs if lo <= j.score <= hi]
         return jobs
@@ -369,8 +373,11 @@ class AppState(rx.State):
     @rx.var
     def fetched_company_filter_label(self) -> str:
         n = len(self.fetched_company_filter)
-        if n == 0:
+        total = len(self.distinct_fetched_companies)
+        if n == total:
             return "All Companies"
+        if n == 0:
+            return "None selected"
         if n == 1:
             return self.fetched_company_filter[0]
         return f"{n} companies"
@@ -384,9 +391,7 @@ class AppState(rx.State):
 
     @rx.var
     def display_fetched_jobs(self) -> list[FetchedJobRow]:
-        jobs = self.fetched_jobs
-        if self.fetched_company_filter:
-            jobs = [j for j in jobs if j.company in self.fetched_company_filter]
+        jobs = [j for j in self.fetched_jobs if j.company in self.fetched_company_filter]
         if self.fetched_pipeline_ran_filter == "ran":
             jobs = [j for j in jobs if j.pipeline_ran]
         elif self.fetched_pipeline_ran_filter == "pending":
@@ -433,6 +438,7 @@ class AppState(rx.State):
         self.fetch_queries = list(self.fetch_available_queries)
         await self.load_jobs()
         await self.load_fetched_jobs()
+        self.match_companies = list(self.distinct_fetched_companies)
 
     # Matched jobs data
 
@@ -443,11 +449,11 @@ class AppState(rx.State):
 
         db_jobs = await get_matched_jobs(status, from_d, to_d)
         self.jobs = [_to_row(j) for j in db_jobs]
+        self.company_filter = sorted({j.company for j in self.jobs})
         self.jobs_page = 0
 
     async def set_status_filter(self, value: str):
         self.status_filter = value
-        self.company_filter = []
         await self.load_jobs()
 
     def toggle_company_filter(self, company: str, checked: bool):
@@ -466,12 +472,10 @@ class AppState(rx.State):
 
     async def set_from_date(self, value: str):
         self.from_date = value
-        self.company_filter = []
         await self.load_jobs()
 
     async def set_to_date(self, value: str):
         self.to_date = value
-        self.company_filter = []
         await self.load_jobs()
 
     def set_score_range(self, value: list[float]):
@@ -535,6 +539,17 @@ class AppState(rx.State):
     def clear_match_companies(self):
         self.match_companies = []
 
+    def select_all_match_companies(self):
+        self.match_companies = list(self.distinct_fetched_companies)
+
+    def select_all_company_filter(self):
+        self.company_filter = list(self.distinct_companies)
+        self.jobs_page = 0
+
+    def select_all_fetched_company_filter(self):
+        self.fetched_company_filter = list(self.distinct_fetched_companies)
+        self.fetched_page = 0
+
     async def update_job_status(self, job_id: int, status: str):
         await bulk_update_matched_job_status({job_id: JobStatus(status)})
         now_str = datetime.now(settings.tz).strftime("%b %d, %Y")
@@ -570,6 +585,7 @@ class AppState(rx.State):
 
         jobs = await get_fetched_jobs(from_d, to_d)
         self.fetched_jobs = [_to_fetched_row(j) for j in jobs]
+        self.fetched_company_filter = sorted({j.company for j in self.fetched_jobs})
         self.fetched_page = 0
 
     def toggle_fetched_company_filter(self, company: str, checked: bool):
@@ -594,12 +610,10 @@ class AppState(rx.State):
 
     async def set_fetched_from_date(self, value: str):
         self.fetched_from_date = value
-        self.fetched_company_filter = []
         await self.load_fetched_jobs()
 
     async def set_fetched_to_date(self, value: str):
         self.fetched_to_date = value
-        self.fetched_company_filter = []
         await self.load_fetched_jobs()
 
     def jobs_prev_page(self):
@@ -681,6 +695,7 @@ class AppState(rx.State):
 
         jobs = await get_fetched_jobs()
         self.fetched_jobs = [_to_fetched_row(j) for j in jobs]
+        self.fetched_company_filter = sorted({j.company for j in self.fetched_jobs})
         self.fetched_page = 0
         self.manual_job_open = False
 
@@ -770,6 +785,7 @@ class AppState(rx.State):
             fetched = await get_fetched_jobs()
             async with self:
                 self.fetched_jobs = [_to_fetched_row(j) for j in fetched]
+                self.fetched_company_filter = sorted({j.company for j in self.fetched_jobs})
 
         except Exception as exc:
             logger.exception("Fetch pipeline failed")
@@ -787,6 +803,7 @@ class AppState(rx.State):
                 match_date_str = self.match_date
                 match_batch_size = self.match_batch_size
                 match_companies = list(self.match_companies)
+                all_fetched_companies = sorted({j.company for j in self.fetched_jobs})
                 match_created_by = self.match_created_by
                 status_filter = self.status_filter
                 from_date_str = self.from_date
@@ -813,11 +830,16 @@ class AppState(rx.State):
                     self.progress = 0.1 + (batch_num / total_batches) * 0.85
                     self.status_text = f"Matching batch {batch_num}/{total_batches}…"
 
+            companies_param = (
+                match_companies
+                if len(match_companies) < len(all_fetched_companies)
+                else None
+            )
             count, was_stopped = await run_match_pipeline(
                 progress_callback=_on_batch,
                 for_date=_match_date,
                 batch_size=match_batch_size,
-                companies=match_companies or None,
+                companies=companies_param,
                 created_by=match_created_by if match_created_by != "all" else None,
                 model=selected_model,
                 should_stop=pipeline_state.is_stop_requested,
@@ -857,7 +879,9 @@ class AppState(rx.State):
             fetched = await get_fetched_jobs(fetched_from_d, fetched_to_d)
             async with self:
                 self.jobs = [_to_row(j) for j in db_jobs]
+                self.company_filter = sorted({j.company for j in self.jobs})
                 self.fetched_jobs = [_to_fetched_row(j) for j in fetched]
+                self.fetched_company_filter = sorted({j.company for j in self.fetched_jobs})
                 self.fetched_page = 0
 
         except Exception as exc:

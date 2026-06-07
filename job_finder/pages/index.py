@@ -425,6 +425,7 @@ def match_card() -> rx.Component:
                                 AppState.toggle_match_company,
                                 AppState.clear_match_companies,
                                 "Search companies…",
+                                AppState.select_all_match_companies,
                             ),
                         ),
                         spacing="1",
@@ -824,6 +825,7 @@ def fetched_jobs_section() -> rx.Component:
                         AppState.toggle_fetched_company_filter,
                         AppState.clear_fetched_company_filter,
                         "Search companies…",
+                        AppState.select_all_fetched_company_filter,
                     ),
                 ),
                 rx.select.root(
@@ -1031,6 +1033,7 @@ def jobs_section() -> rx.Component:
                         AppState.toggle_company_filter,
                         AppState.clear_company_filter,
                         "Search companies…",
+                        AppState.select_all_company_filter,
                     ),
                 ),
                 rx.select.root(
