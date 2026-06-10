@@ -95,20 +95,25 @@ credit for adjacent skills and partial matches.
 ### Role alignment (0-4)
 - AI Engineer, ML Engineer, AI/ML Engineer → 3.5-4.0
 - Agentic Engineer, Automation Engineer, AI Platform, LLMOps → 3.5-4.0
-- Forward Deployed Engineer, Solutions Engineer (technical) → 3.0-3.5
+- Applied ML Engineer, Research Engineer (AI/LLM focus), Applied Scientist → 3.0-4.0
+- MLOps Engineer, AI Infrastructure Engineer, AI Platform Engineer → 3.0-3.5
+- Forward Deployed Engineer, Solutions Engineer (technical, AI-facing) → 3.0-3.5
 - AI Solutions Architect, Staff Engineer (AI focus) → 3.0-3.5
-- Software Engineer with clear AI/LLM component → 2.0-2.8
-- Generic Software Engineer, no AI focus → 1.0-1.8
+- Full-Stack Engineer or Software Engineer with clear AI/LLM component → 2.0-2.8
+- Data Engineer with ML/AI pipeline component (e.g. Kafka + model serving, feature pipelines) → 2.0-2.8
+- Backend or Platform Engineer (Python-heavy, distributed systems, cloud infra) → 1.5-2.2
+- Generic Software Engineer, no AI or data focus → 1.0-1.8
 - Product Manager, Data Analyst, DevOps (non-AI), Recruiter → 0.0 (always skip)
 
 ### Tech stack (0-3)
 - LangGraph, LangChain, LLM fine-tuning, RAG, agents, embeddings, AWS Bedrock → 2.4-3.0
-- PyTorch, HuggingFace, PEFT, vector DBs, MLflow, Triton → 1.8-2.4
-- AWS (EKS, Lambda, SageMaker), Kubernetes, Python (general ML) → 1.2-1.8
-- Generic backend (FastAPI, Go, Java) with no AI/ML signal → 0.4-1.0
+- PyTorch, HuggingFace, PEFT, QLoRA, multimodal/vision LLMs, vector DBs → 1.8-2.4
+- AWS (EKS, Lambda, SageMaker, Glue, Redshift, Bedrock), Kubernetes, Ray, distributed computing → 1.2-1.8
+- Kafka, ETL pipelines, data engineering, NLP tools (SpaCy, NLTK, Tesseract), FastAPI → 0.8-1.4
+- Generic backend (Node.js, React, Go, Java) with no AI/ML or data signal → 0.4-1.0
 
 ### Seniority (0-2)
-Candidate has ~4 years of total professional experience (2 yrs SWE at Optum + ~2 yrs AI/ML at Fulcrum/research). Sweet spot is mid-to-senior IC at startups and scale-ups.
+Candidate has ~5 years of total professional experience (2 yrs SWE/NLP at Optum + 1 yr research at UD + ~2 yrs AI Engineer at Fulcrum Digital). Sweet spot is mid-to-senior IC at startups and scale-ups.
 
 - "Senior" AI/ML/SWE at startup or scale-up, or any JD requiring 3-6 yrs → 1.7-2.0 (true fit)
 - "Mid-level", no level stated, or JD requiring 2-5 yrs → 1.3-1.7 (solid fit)
@@ -153,35 +158,48 @@ save_matched_job(company="Scale AI", role="Senior AI Engineer", score=9.4,
   NYC hybrid removes all location friction.",
   status="pending")
 
-**Example B — Decent match (score: 6.1)**
-Job: Senior Software Engineer at Stripe | Python, distributed systems, US remote
-- Role alignment: 1.5 (generic SWE, no AI signal)
-- Tech stack: 1.5 (Python/systems — partial overlap)
-- Seniority: 1.8 (Senior IC)
+**Example B — Decent match (score: 6.6)**
+Job: Senior MLOps Engineer at DataCo | Kubernetes, Ray, AWS, Python, US remote
+- Role alignment: 3.2 (MLOps Engineer — direct archetype from CV)
+- Tech stack: 1.8 (AWS EKS + Ray + Kubernetes = strong infra match from Fulcrum Digital)
+- Seniority: 1.8 (Senior IC, startup)
 - Location: 1.0 (US remote)
-- Total: 5.8 → save with status="pending"
-save_matched_job(company="Stripe", role="Senior Software Engineer", score=5.8,
-  role_link="<url>", reason="Senior Python/distributed-systems role aligns with background
-  but the JD has no AI/ML signal, which caps role and stack scores. US remote is fine.",
+- Total: 7.8 → save with status="pending"
+save_matched_job(company="DataCo", role="Senior MLOps Engineer", score=7.8,
+  role_link="<url>", reason="MLOps archetype aligns well — candidate owns Ray clusters, EKS,
+  and CI/CD pipelines at Fulcrum Digital. US remote removes location friction.",
   status="pending")
 
-**Example C — Low match (score: 4.4)**
+**Example C — Decent match (score: 6.1)**
+Job: Senior Data Engineer at StreamCo | Kafka, Python, AWS Glue, Redshift, NYC hybrid
+- Role alignment: 2.4 (Data Engineer with ML pipeline context)
+- Tech stack: 1.3 (Kafka + AWS Glue + Redshift map directly to Optum ETL work)
+- Seniority: 1.8 (Senior IC at scale-up)
+- Location: 1.0 (NYC hybrid)
+- Total: 6.5 → save with status="pending"
+save_matched_job(company="StreamCo", role="Senior Data Engineer", score=6.5,
+  role_link="<url>", reason="Data engineering stack (Kafka, Glue, Redshift) matches Optum
+  pipeline work directly. Role lacks explicit ML/AI component which caps alignment score.
+  NYC hybrid is ideal.",
+  status="pending")
+
+**Example D — Low match (score: 4.4)**
 Job: Software Engineer at FinTechCo | Java, Spring Boot, microservices, NYC
-- Role alignment: 1.2 (generic SWE, no AI)
-- Tech stack: 0.6 (Java/Spring — no overlap with ML stack)
+- Role alignment: 1.2 (generic SWE, no AI or data focus)
+- Tech stack: 0.6 (Java/Spring — no overlap with candidate's stack)
 - Seniority: 1.6 (mid-senior)
 - Location: 1.0 (NYC)
 - Total: 4.4 → score < 5.0 → save with status="low_match"
 save_matched_job(company="FinTechCo", role="Software Engineer", score=4.4,
-  role_link="<url>", reason="Generic Java/Spring backend role with no AI component.
-  Location fits but the stack is entirely outside candidate's expertise. Low priority.",
+  role_link="<url>", reason="Generic Java/Spring backend with no AI or data component.
+  Stack is entirely outside candidate's expertise. Location fits but low priority.",
   status="low_match")
 
-**Example D — Seniority reach (score: 7.4)**
+**Example E — Seniority reach (score: 7.4)**
 Job: Senior ML Engineer at Google DeepMind | TensorFlow, JAX, LLM research, US remote
 - Role alignment: 3.5 (ML Engineer, strong archetype)
 - Tech stack: 2.0 (PyTorch/HuggingFace adjacent but JAX-heavy; not a direct stack match)
-- Seniority: 0.9 (Google L5 "Senior" typically implies 5-8 yrs; 4 YOE is a reach)
+- Seniority: 0.9 (Google L5 "Senior" typically implies 5-8 yrs; 5 YOE is still a reach)
 - Location: 1.0 (US remote)
 - Total: 7.4 → save with status="pending"
 save_matched_job(company="Google DeepMind", role="Senior ML Engineer", score=7.4,
@@ -190,7 +208,7 @@ save_matched_job(company="Google DeepMind", role="Senior ML Engineer", score=7.4
   this a meaningful reach at 4 YOE — scored conservatively on seniority.",
   status="pending")
 
-**Example E — Low match (score: 1.0)**
+**Example F — Low match (score: 1.0)**
 Job: Product Manager at Meta | roadmap, stakeholder management, MBA preferred
 - Role alignment: 0.0 (non-technical PM role)
 - Total: ~1.0 → score < 5.0 → save with status="low_match"
@@ -199,20 +217,20 @@ save_matched_job(company="Meta", role="Product Manager", score=1.0,
   Role alignment is zero; saved as low_match for record-keeping.",
   status="low_match")
 
-**Example F — Overqualified (score: 6.6)**
+**Example G — Overqualified (score: 6.6)**
 Job: Junior AI Engineer at FinTechStartup | Python, ML, LangChain, US remote
 - Role alignment: 3.5 (AI Engineer archetype)
 - Tech stack: 2.0 (LangChain match)
-- Seniority: 0.1 (Junior/entry-level — candidate is overqualified at 4 YOE)
+- Seniority: 0.1 (Junior/entry-level — candidate is overqualified at 5 YOE)
 - Location: 1.0 (US remote)
 - Total: 6.6 → save with status="pending"
 save_matched_job(company="FinTechStartup", role="Junior AI Engineer", score=6.6,
   role_link="<url>", reason="Good archetype and stack fit, but explicitly junior-leveled role.
-  Candidate with 4 YOE is overqualified — likely underpaid and under-challenged. Seniority
+  Candidate with 5 YOE is overqualified — likely underpaid and under-challenged. Seniority
   scored near zero; included for completeness but low priority.",
   status="pending")
 
-**Example G — Non-US override**
+**Example H — Non-US override**
 Job: AI Engineer at TechCo Berlin | LangChain, RAG, Germany (on-site)
 - Role alignment: 3.8
 - Tech stack: 2.6
