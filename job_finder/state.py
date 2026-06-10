@@ -32,6 +32,7 @@ STATUS_COLORS: dict[str, str] = {
     "interested": "violet",
     "applied": "blue",
     "rejected": "red",
+    "not_interested": "orange",
     "low_match": "gray",
 }
 
@@ -40,6 +41,7 @@ STATUS_LABELS: dict[str, str] = {
     "interested": "Interested",
     "applied": "Applied",
     "rejected": "Rejected",
+    "not_interested": "Not Interested",
     "low_match": "Low Match",
 }
 

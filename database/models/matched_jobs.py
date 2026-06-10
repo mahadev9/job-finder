@@ -13,6 +13,7 @@ class JobStatus(str, enum.Enum):
     INTERESTED = "interested"
     APPLIED = "applied"
     REJECTED = "rejected"
+    NOT_INTERESTED = "not_interested"
     LOW_MATCH = "low_match"
 
 
