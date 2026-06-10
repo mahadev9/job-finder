@@ -266,20 +266,6 @@ search_queries:
     query: '"Forward Deployed Engineer" OR "Deployed Engineer" OR "Deployment Engineer" AI site:job-boards.greenhouse.io OR site:jobs.ashbyhq.com OR site:jobs.lever.co'
     enabled: true
 
-  # -- Remote job boards --
-
-  - name: WeWorkRemotely — AI & DX
-    query: 'site:weworkremotely.com "AI" OR "DevRel" OR "Solutions Engineer" OR "Forward Deployed" OR "Founding Engineer"'
-    enabled: true
-
-  - name: Working Nomads — AI/DevRel/SA
-    query: 'site:workingnomads.com "AI Engineer" OR "Developer Advocate" OR "Solutions Architect" OR "Forward Deployed"'
-    enabled: true
-
-  - name: RemoteOK — AI/DevRel/SA
-    query: 'site:remoteok.com "AI Engineer" OR "Developer Advocate" OR "Solutions Architect" OR "Forward Deployed" OR "Founding Engineer"'
-    enabled: true
-
   # -- Lever --
 
   - name: Lever — AI & ML Engineer
@@ -305,10 +291,6 @@ search_queries:
     enabled: true
 
   # -- Aggregators --
-
-  - name: Himalayas — Remote AI/Dev-tools
-    query: 'site:himalayas.app "AI Engineer" OR "Solutions Architect" OR "Developer Advocate" OR "Forward Deployed" OR "Founding Engineer"'
-    enabled: true
 
   - name: HN Who's Hiring — Remote AI
     query: 'site:news.ycombinator.com OR site:hnrss.org "AI Engineer" OR "Forward Deployed" OR "DevRel" OR "Founding Engineer" remote'
