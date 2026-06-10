@@ -240,9 +240,25 @@ search_queries:
     query: 'site:apply.workable.com "Software Engineer"'
     enabled: true
 
-  # -- Contact Center AI --
-  - name: Contact Center AI — SA & SE
-    query: '"contact center" OR "customer service" "AI" "Solutions Architect" OR "Solutions Engineer" OR "Forward Deployed" remote'
+  # -- Workday --
+  - name: Workday — AI Engineer
+    query: 'site:myworkdayjobs.com "AI Engineer" OR "ML Engineer" OR "LLM Engineer" OR "Applied AI" remote'
+    enabled: true
+
+  - name: Workday — Agentic & LLMOps
+    query: 'site:myworkdayjobs.com "Agentic" OR "LLMOps" OR "AI Platform" OR "GenAI" OR "Generative AI"'
+    enabled: true
+
+  - name: Workday — Solutions Architect & FDE
+    query: 'site:myworkdayjobs.com "Solutions Architect" OR "Forward Deployed" OR "Solutions Engineer" AI'
+    enabled: true
+
+  - name: Workday — Software Engineer AI
+    query: 'site:myworkdayjobs.com "Software Engineer" "AI" OR "Machine Learning" OR "LLM"'
+    enabled: true
+
+  - name: Workday — MLOps & Platform
+    query: 'site:myworkdayjobs.com "MLOps" OR "ML Platform" OR "AI Infrastructure" OR "AI Platform Engineer"'
     enabled: true
 
   # -- FDE specific (cross-portal) --
@@ -349,6 +365,27 @@ tracked_companies:
     notes: "Enterprise LLM provider. SA and Applied AI roles."
     enabled: true
 
+  - name: Amazon Web Services (AWS AI)
+    careers_url: https://www.amazon.jobs/en/search?offset=0&result_limit=10&sort=relevant&category%5B%5D=software-development&job_type%5B%5D=Full-Time&country%5B%5D=USA&distanceType=Mi&radius=24km&is_manager%5B%5D=0&latitude=&longitude=&loc_group_id=&loc_query=&base_query=&city=&country=&region=&county=&query_options=&
+    scan_method: websearch
+    scan_query: 'site:amazon.jobs "AWS" "AI Engineer" OR "ML Engineer" OR "Solutions Architect" OR "Applied Scientist" OR "Bedrock" OR "SageMaker"'
+    notes: "AWS AI/ML team. You deploy production systems on Bedrock, EKS, Lambda, SageMaker — unusually strong positioning for AWS SA and AI Engineer roles."
+    enabled: true
+
+  - name: xAI
+    careers_url: https://x.ai/careers
+    scan_method: websearch
+    scan_query: 'site:x.ai/careers "AI Engineer" OR "ML Engineer" OR "Applied AI" OR "Research Engineer"'
+    notes: "Elon Musk's AI lab (Grok). Rapidly growing. AI Engineer / ML Engineer roles."
+    enabled: true
+
+  - name: Mistral AI
+    careers_url: https://mistral.ai/company/careers
+    scan_method: websearch
+    scan_query: 'site:jobs.lever.co/mistralai OR site:mistral.ai "AI Engineer" OR "Solutions Architect" OR "Applied AI" OR "ML Engineer"'
+    notes: "Leading open-weight LLM provider. Applied AI / SA / ML Engineer roles. US remote presence."
+    enabled: true
+
   # -- AI/ML Platforms --
 
   - name: Databricks
@@ -379,46 +416,34 @@ tracked_companies:
     notes: "AI compute. ML / AI Engineer roles."
     enabled: true
 
-  # -- Voice AI & Conversational AI --
-
-  - name: Intercom
-    careers_url: https://job-boards.greenhouse.io/intercom
-    api: https://boards-api.greenhouse.io/v1/boards/intercom/jobs
-    notes: "SF. Fin AI agent."
-    enabled: true
-
-  - name: Hume AI
-    careers_url: https://job-boards.greenhouse.io/humeai
-    api: https://boards-api.greenhouse.io/v1/boards/humeai/jobs
-    notes: "NYC. Empathic voice AI."
-    enabled: true
-
-  - name: ElevenLabs
-    careers_url: https://jobs.ashbyhq.com/elevenlabs
+  - name: Together AI
+    careers_url: https://www.together.ai/careers
     scan_method: websearch
-    scan_query: "site:jobs.ashbyhq.com/elevenlabs"
-    notes: "Voice AI TTS leader."
+    scan_query: 'site:together.ai/careers OR "together.ai" "AI Engineer" OR "ML Engineer" OR "MLOps" OR "Inference" site:jobs.ashbyhq.com OR site:job-boards.greenhouse.io'
+    notes: "Open-source LLM inference platform. AI Engineer / MLOps roles. Your Bedrock migration and deployment experience maps directly."
     enabled: true
 
-  - name: Deepgram
-    careers_url: https://jobs.ashbyhq.com/deepgram
+  # -- RAG & Vector DB --
+
+  - name: Weaviate
+    careers_url: https://weaviate.io/company/careers
     scan_method: websearch
-    scan_query: 'site:deepgram.com/careers OR "deepgram" "Solutions" OR "AI Engineer" site:jobs.ashbyhq.com'
-    notes: "STT/TTS APIs."
+    scan_query: 'site:weaviate.io/company/careers OR "weaviate" "Solutions Architect" OR "AI Engineer" OR "ML Engineer" site:job-boards.greenhouse.io OR site:jobs.ashbyhq.com'
+    notes: "Open-source vector DB. SA and ML Engineer roles. Your RAG retriever + reranking work is a direct pitch."
     enabled: true
 
-  - name: Vapi
-    careers_url: https://jobs.ashbyhq.com/vapi
+  - name: Contextual AI
+    careers_url: https://contextual.ai/careers
     scan_method: websearch
-    scan_query: "site:jobs.ashbyhq.com/vapi"
-    notes: "Voice AI infrastructure."
+    scan_query: 'site:contextual.ai/careers OR "contextual.ai" "AI Engineer" OR "ML Engineer" OR "Solutions" site:jobs.ashbyhq.com OR site:job-boards.greenhouse.io'
+    notes: "Enterprise RAG platform. Near-identical to Fulcrum Digital's RAG pipeline work (precision, retrieval, reranking)."
     enabled: true
 
-  - name: Bland AI
-    careers_url: https://jobs.ashbyhq.com/bland
+  - name: LlamaIndex
+    careers_url: https://www.llamaindex.ai/careers
     scan_method: websearch
-    scan_query: "site:jobs.ashbyhq.com/bland"
-    notes: "Voice phone agents. $65M Series B."
+    scan_query: '"llamaindex" OR "llama-index" "AI Engineer" OR "ML Engineer" OR "Developer Relations" OR "Solutions" site:jobs.ashbyhq.com OR site:job-boards.greenhouse.io'
+    notes: "Major RAG/data framework (alongside LangChain). AI Engineer / DevRel roles."
     enabled: true
 
   # -- AI-native platforms (FDE/SA teams) --
@@ -428,18 +453,6 @@ tracked_companies:
     scan_method: websearch
     scan_query: 'site:retool.com/careers "Deployed" OR "AI" OR "Solutions"'
     notes: "Popularized Deployed Engineer role."
-    enabled: true
-
-  - name: Airtable
-    careers_url: https://job-boards.greenhouse.io/airtable
-    api: https://boards-api.greenhouse.io/v1/boards/airtable/jobs
-    notes: "No-code + AI platform."
-    enabled: true
-
-  - name: Vercel
-    careers_url: https://job-boards.greenhouse.io/vercel
-    api: https://boards-api.greenhouse.io/v1/boards/vercel/jobs
-    notes: "AI SDK, v0.dev. Frontend AI tooling."
     enabled: true
 
   - name: Temporal
@@ -495,34 +508,20 @@ tracked_companies:
     notes: "AI customer support agents."
     enabled: true
 
-  # -- Enterprise comms & contact center --
+  # -- Enterprise AI --
 
-  - name: Twilio
-    careers_url: https://www.twilio.com/en-us/company/jobs
+  - name: Writer
+    careers_url: https://writer.com/careers
     scan_method: websearch
-    scan_query: 'site:twilio.com/company/jobs "AI" OR "Voice" "Solutions" OR "Architect"'
-    notes: "Voice/messaging infrastructure."
+    scan_query: 'site:jobs.ashbyhq.com/writer OR site:writer.com/careers "AI Engineer" OR "ML Engineer" OR "Solutions Architect" OR "Forward Deployed"'
+    notes: "Enterprise GenAI platform. Fulcrum Digital enterprise deployment background (Doxtract-IDP, LangGraph pipelines) is a direct fit."
     enabled: true
 
-  - name: Dialpad
-    careers_url: https://www.dialpad.com/careers
+  - name: Moveworks
+    careers_url: https://www.moveworks.com/careers
     scan_method: websearch
-    scan_query: '"dialpad" "AI" "Solutions" OR "Engineer" site:job-boards.greenhouse.io OR site:jobs.ashbyhq.com'
-    notes: "Voice AI for business comms."
-    enabled: true
-
-  - name: Gong
-    careers_url: https://www.gong.io/careers
-    scan_method: websearch
-    scan_query: 'site:gong.io/careers "AI" OR "Solutions" OR "Architect"'
-    notes: "Revenue intelligence with voice AI."
-    enabled: true
-
-  - name: Genesys
-    careers_url: https://www.genesys.com/careers
-    scan_method: websearch
-    scan_query: 'site:genesys.com/careers "AI" "Solutions Architect" OR "AI Engineer"'
-    notes: "Contact center cloud + AI."
+    scan_query: 'site:moveworks.com/careers OR "moveworks" "AI Engineer" OR "Solutions Architect" OR "Forward Deployed" OR "ML Engineer" site:job-boards.greenhouse.io'
+    notes: "Enterprise AI assistant platform. Strong FDE/SA hiring culture. Enterprise deployment background maps directly."
     enabled: true
 
   - name: Salesforce
@@ -569,6 +568,71 @@ tracked_companies:
     notes: "AI agent management platform."
     enabled: true
 
+  - name: CrewAI
+    careers_url: https://www.crewai.com/careers
+    scan_method: websearch
+    scan_query: '"crewai" OR "crew.ai" "AI Engineer" OR "ML Engineer" OR "Agentic" OR "Forward Deployed" site:jobs.ashbyhq.com OR site:job-boards.greenhouse.io OR site:workatastartup.com'
+    notes: "Multi-agent orchestration framework. Direct adjacent to LangGraph agentic work. Actively hiring engineers."
+    enabled: true
+
+  - name: Dust
+    careers_url: https://dust.tt/careers
+    scan_method: websearch
+    scan_query: 'site:dust.tt/careers OR "dust.tt" "AI Engineer" OR "Forward Deployed" OR "Solutions" site:jobs.ashbyhq.com'
+    notes: "Enterprise AI agents platform. Strong FDE/AI engineer culture. Agentic workflows match LangGraph background."
+    enabled: true
+
+  - name: Fireworks AI
+    careers_url: https://fireworks.ai/careers
+    scan_method: websearch
+    scan_query: 'site:jobs.ashbyhq.com/fireworks-ai OR site:fireworks.ai/careers "AI Engineer" OR "ML Engineer" OR "MLOps" OR "Inference"'
+    notes: "LLM inference platform. MLOps / AI Engineer roles. Bedrock migration and deployment experience maps directly."
+    enabled: true
+
+  - name: Baseten
+    careers_url: https://www.baseten.co/careers
+    scan_method: websearch
+    scan_query: 'site:jobs.ashbyhq.com/baseten OR site:baseten.co/careers "AI Engineer" OR "ML Engineer" OR "Solutions" OR "MLOps"'
+    notes: "ML model serving platform. EKS/Ray/deployment experience is a direct match for their infra-heavy roles."
+    enabled: true
+
+  - name: Replicate
+    careers_url: https://replicate.com/careers
+    scan_method: websearch
+    scan_query: 'site:replicate.com/careers OR "replicate" "AI Engineer" OR "ML Engineer" OR "Solutions" OR "MLOps" site:jobs.ashbyhq.com OR site:job-boards.greenhouse.io'
+    notes: "ML model hosting and deployment. SA/ML Engineer roles. EKS/Ray/model serving experience maps directly."
+    enabled: true
+
+  # -- Document AI & Enterprise Automation --
+
+  - name: Instabase
+    careers_url: https://instabase.com/careers
+    scan_method: websearch
+    scan_query: 'site:instabase.com/careers OR "instabase" "AI Engineer" OR "ML Engineer" OR "Solutions Architect" OR "Forward Deployed" site:job-boards.greenhouse.io'
+    notes: "Document intelligence platform. Doxtract-IDP work (92% extraction confidence, Lambda-SQS-DynamoDB) is an almost identical portfolio match."
+    enabled: true
+
+  - name: Hyperscience
+    careers_url: https://hyperscience.com/careers
+    scan_method: websearch
+    scan_query: 'site:hyperscience.com/careers OR "hyperscience" "AI Engineer" OR "ML Engineer" OR "Solutions Architect" site:job-boards.greenhouse.io'
+    notes: "Document automation AI. Enterprise document processing background (OCR, extraction, HITL) maps directly."
+    enabled: true
+
+  - name: Hebbia
+    careers_url: https://hebbia.ai/careers
+    scan_method: websearch
+    scan_query: 'site:hebbia.ai/careers OR "hebbia" "AI Engineer" OR "ML Engineer" OR "Forward Deployed" OR "Solutions" site:jobs.ashbyhq.com OR site:job-boards.greenhouse.io'
+    notes: "Document intelligence for finance/legal (Matrix product = RAG over complex documents). Doxtract-IDP work (92% extraction confidence) is an almost identical portfolio match."
+    enabled: true
+
+  - name: Reducto
+    careers_url: https://reducto.ai/careers
+    scan_method: websearch
+    scan_query: '"reducto" OR "reducto.ai" "AI Engineer" OR "ML Engineer" OR "Founding Engineer" site:workatastartup.com OR site:jobs.ashbyhq.com'
+    notes: "YC-backed document parsing startup. Early-stage, actively hiring AI engineers. Direct match to document extraction work."
+    enabled: true
+
   # -- No-Code/Low-Code & Automation --
 
   - name: Zapier
@@ -606,53 +670,10 @@ tracked_companies:
     notes: "AI-native search and enterprise AI platform."
     enabled: true
 
-  - name: Clay Labs
-    careers_url: https://jobs.ashbyhq.com/claylabs
-    scan_method: websearch
-    scan_query: 'site:jobs.ashbyhq.com/claylabs "AI" OR "Developer Experience" OR "Growth" OR "Engineer"'
-    notes: "AI-native GTM and workflow automation platform."
-    enabled: true
-
-  - name: Runway
-    careers_url: https://job-boards.greenhouse.io/runwayml
-    api: https://boards-api.greenhouse.io/v1/boards/runwayml/jobs
-    notes: "Generative AI video and creative tooling platform."
-    enabled: true
-
   - name: Hightouch
     careers_url: https://job-boards.greenhouse.io/hightouch
     api: https://boards-api.greenhouse.io/v1/boards/hightouch/jobs
     notes: "Data activation platform with AI agents and solutions engineering roles."
-    enabled: true
-
-  - name: WorkOS
-    careers_url: https://jobs.ashbyhq.com/workos
-    scan_method: websearch
-    scan_query: 'site:jobs.ashbyhq.com/workos "Solutions Engineer" OR "Developer Success" OR "Developer Experience"'
-    notes: "Developer tools. Solutions Engineer / Developer Success roles."
-    enabled: true
-
-  # -- Dev Tools / AI Infra (DevRel, SA, FDE focus) --
-
-  - name: Supabase
-    careers_url: https://jobs.ashbyhq.com/supabase
-    scan_method: websearch
-    scan_query: "site:jobs.ashbyhq.com/supabase"
-    notes: "Open-source Firebase alternative. Remote-first. Postgres + Auth + Storage. Strong DevRel/DX hiring."
-    enabled: true
-
-  - name: Clerk
-    careers_url: https://jobs.ashbyhq.com/clerk
-    scan_method: websearch
-    scan_query: 'site:jobs.ashbyhq.com/clerk "Solutions Engineer" OR "Customer Engineer" OR "Developer Success"'
-    notes: "Auth & user management for developers. Solutions Engineer / CE roles."
-    enabled: true
-
-  - name: Inngest
-    careers_url: https://jobs.ashbyhq.com/inngest
-    scan_method: websearch
-    scan_query: 'site:jobs.ashbyhq.com/inngest "Developer Advocate" OR "DevRel" OR "Solutions Engineer"'
-    notes: "Durable workflow engine for serverless. DevRel / Solutions Engineer roles."
     enabled: true
 
   - name: Zep AI

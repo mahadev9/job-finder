@@ -86,6 +86,7 @@ def _detect_portal(link: str) -> str:
         ("greenhouse.io", "greenhouse"),
         ("ashbyhq.com", "ashby"),
         ("jobs.lever.co", "lever"),
+        ("myworkdayjobs.com", "workday"),
         ("linkedin.com", "linkedin"),
         ("workable.com", "workable"),
         ("wellfound.com", "wellfound"),
