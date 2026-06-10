@@ -470,12 +470,26 @@ def pipeline_section() -> rx.Component:
                 rx.vstack(
                     rx.hstack(
                         rx.spinner(size="2"),
-                        rx.text(AppState.status_text, size="2", weight="medium"),
+                        rx.text(
+                            rx.cond(
+                                AppState.stop_requested,
+                                "Stop requested…",
+                                AppState.status_text,
+                            ),
+                            size="2",
+                            weight="medium",
+                            color=rx.cond(
+                                AppState.stop_requested,
+                                "var(--amber-11)",
+                                "inherit",
+                            ),
+                        ),
                         rx.spacer(),
                         rx.button(
                             rx.icon("square", size=12),
                             "Stop",
                             on_click=AppState.stop_pipeline,
+                            disabled=AppState.stop_requested,
                             size="1",
                             variant="soft",
                             color_scheme="red",

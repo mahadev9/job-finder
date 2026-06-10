@@ -145,6 +145,7 @@ class AppState(rx.State):
 
     # Pipeline
     running: str = ""
+    stop_requested: bool = False
     progress: float = 0.0
     status_text: str = ""
     result_message: str = ""
@@ -708,6 +709,7 @@ class AppState(rx.State):
 
     def stop_pipeline(self):
         pipeline_state.request_stop()
+        self.stop_requested = True
 
     # Background pipelines
 
@@ -775,6 +777,7 @@ class AppState(rx.State):
             was_stopped = pipeline_state.is_stop_requested()
             async with self:
                 self.running = ""
+                self.stop_requested = False
                 self.progress = 1.0
                 if was_stopped:
                     self.result_kind = "warning"
@@ -794,6 +797,7 @@ class AppState(rx.State):
             logger.exception("Fetch pipeline failed")
             async with self:
                 self.running = ""
+                self.stop_requested = False
                 self.result_kind = "error"
                 self.result_message = str(exc)
 
@@ -851,11 +855,13 @@ class AppState(rx.State):
             if was_stopped:
                 async with self:
                     self.running = ""
+                    self.stop_requested = False
                     self.result_kind = "warning"
                     self.result_message = f"Stopped after evaluating {count} job(s)."
             elif count == 0:
                 async with self:
                     self.running = ""
+                    self.stop_requested = False
                     self.result_kind = "warning"
                     self.result_message = (
                         f"No jobs found for {_match_date}. Run 'Fetch New Jobs' first."
@@ -863,6 +869,7 @@ class AppState(rx.State):
             else:
                 async with self:
                     self.running = ""
+                    self.stop_requested = False
                     self.progress = 1.0
                     self.result_kind = "success"
                     self.result_message = f"Match complete — evaluated {count} job(s)."
@@ -891,6 +898,7 @@ class AppState(rx.State):
             logger.exception("Match pipeline failed")
             async with self:
                 self.running = ""
+                self.stop_requested = False
                 self.result_kind = "error"
                 self.result_message = str(exc)
 
