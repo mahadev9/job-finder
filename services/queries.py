@@ -121,6 +121,16 @@ async def get_fetched_jobs(
         return list((await session.execute(stmt)).scalars().all())
 
 
+async def get_recent_matched_jobs(
+    companies: list[str] | None = None, limit: int = 5
+) -> list[MatchedJob]:
+    async with SessionLocal() as session:
+        stmt = select(MatchedJob).order_by(MatchedJob.created_at.desc()).limit(limit)
+        if companies:
+            stmt = stmt.where(MatchedJob.company.in_(companies))
+        return list((await session.execute(stmt)).scalars().all())
+
+
 async def get_distinct_token_usage_models() -> list[str]:
     async with SessionLocal() as session:
         stmt = select(TokenUsage.model).distinct().order_by(TokenUsage.model)

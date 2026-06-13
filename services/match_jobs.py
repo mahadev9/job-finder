@@ -8,7 +8,7 @@ from core.config import settings
 from database.models.jobs import Job
 from services.llm_agent import invoke_agent
 from services.prompt_config import build_match_system_prompt
-from services.queries import get_unmatched_jobs, mark_jobs_matched
+from services.queries import get_recent_matched_jobs, get_unmatched_jobs, mark_jobs_matched
 
 logger = logging.getLogger("job-finder")
 
@@ -64,7 +64,8 @@ async def run_match_pipeline(
     logger.info(f"Running match pipeline on {len(jobs)} job(s)")
     profile, cv = await _load_templates()
     today = (for_date or datetime.now(settings.tz).date()).strftime("%B %d, %Y")
-    system_prompt = build_match_system_prompt(profile, cv, today)
+    recent_matches = await get_recent_matched_jobs(companies=companies, limit=5)
+    system_prompt = build_match_system_prompt(profile, cv, today, recent_matches)
 
     total_batches = -(-len(jobs) // batch_size)
     processed = 0

@@ -67,7 +67,26 @@ Stop after saving all relevant jobs from the given source.
 """
 
 
-def build_match_system_prompt(profile: str, cv: str, today: str) -> str:
+def _build_calibration_section(recent_matches: list | None) -> str:
+    if not recent_matches:
+        return ""
+    rows = sorted(recent_matches, key=lambda m: m.score, reverse=True)
+    lines = [
+        "## Prior Scoring Calibration\n",
+        "These are the most recent jobs already scored for this candidate. "
+        "Use them as a scoring anchor — keep new scores consistent with these.\n",
+        "| Company | Role | Score | Reason summary |\n",
+        "|---------|------|-------|----------------|\n",
+    ]
+    for m in rows:
+        reason = (m.reason or "").replace("|", "–")[:120]
+        lines.append(f"| {m.company} | {m.role} | {m.score:.1f} | {reason} |\n")
+    return "".join(lines) + "\n"
+
+
+def build_match_system_prompt(
+    profile: str, cv: str, today: str, recent_matches: list | None = None
+) -> str:
     return f"""
 You are a job matching agent evaluating job listings for a specific candidate.
 
@@ -242,6 +261,7 @@ save_matched_job(company="TechCo Berlin", role="AI Engineer", score=8.3,
   Status overridden to low_match per location policy.",
   status="low_match")
 
+{_build_calibration_section(recent_matches)}
 ## Instructions
 
 Process every job in the list. For each one:
