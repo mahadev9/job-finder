@@ -1,5 +1,4 @@
 import os
-from typing import List
 from zoneinfo import ZoneInfo
 
 from langchain.chat_models import BaseChatModel
@@ -33,7 +32,7 @@ class Settings(BaseSettings):
         ...,
         description="Default language model. Format: provider:model_name",
     )
-    AVAILABLE_MODELS: List[str] = Field(
+    AVAILABLE_MODELS: list[str] = Field(
         default_factory=lambda: [
             "openai:gpt-5.4",
             "openai:gpt-5.4-mini",
