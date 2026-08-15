@@ -43,6 +43,9 @@ class Settings(BaseSettings):
             "anthropic:claude-sonnet-5",
             "lmstudio:qwen/qwen3.8-27b",
             "lmstudio:qwen/qwen3.6-35b-a3b",
+            "qwen:qwen3.8-max",
+            "qwen:deepseek-v4-flash",
+            "qwen:qwen3.7-plus",
         ],
         description="Models shown in the UI selector (comma-separated). Defaults to LLM_MODEL only.",
     )
@@ -66,6 +69,14 @@ class Settings(BaseSettings):
         default=None,
         description="API key for Google GenAI when the google_genai provider is selected.",
     )
+    QWEN_API_KEY: SecretStr | None = Field(
+        default=None,
+        description="API key for Qwen when the qwen provider is selected.",
+    )
+    QWEN_BASE_URL: str | None = Field(
+        default=None,
+        description="Base URL for Qwen when the qwen provider is selected.",
+    )
     DEFAULT_TEMPERATURE: float = Field(
         0.7,
         description="Default temperature for LLM responses.",
@@ -77,9 +88,15 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_llm_model(self) -> "Settings":
-        if self.llm_provider not in ["lmstudio", "openai", "anthropic", "google_genai"]:
+        if self.llm_provider not in [
+            "lmstudio",
+            "openai",
+            "anthropic",
+            "google_genai",
+            "qwen",
+        ]:
             raise ValueError(
-                f"Unsupported provider '{self.llm_provider}'. Supported providers are: lmstudio, openai, anthropic, google_genai."
+                f"Unsupported provider '{self.llm_provider}'. Supported providers are: lmstudio, openai, anthropic, google_genai, qwen."
             )
 
         if self.llm_provider == "lmstudio":
@@ -105,6 +122,15 @@ class Settings(BaseSettings):
             if self.GEMINI_API_KEY is None:
                 raise ValueError(
                     "GEMINI_API_KEY environment variable is required for google_genai provider."
+                )
+        elif self.llm_provider == "qwen":
+            if self.QWEN_API_KEY is None:
+                raise ValueError(
+                    "QWEN_API_KEY environment variable is required for qwen provider."
+                )
+            if not self.QWEN_BASE_URL:
+                raise ValueError(
+                    "QWEN_BASE_URL environment variable is required for qwen provider."
                 )
 
         return self
@@ -154,6 +180,14 @@ class Settings(BaseSettings):
                 temperature=self.DEFAULT_TEMPERATURE,
                 thinking_level="medium",
                 api_key=self.GEMINI_API_KEY.get_secret_value(),
+            )
+        elif provider == "qwen":
+            return ChatOpenAI(
+                base_url=self.QWEN_BASE_URL,
+                model=model_name,
+                temperature=self.DEFAULT_TEMPERATURE,
+                api_key=self.QWEN_API_KEY.get_secret_value(),
+                extra_body={"enable_thinking": True},
             )
         raise ValueError(f"Unsupported provider '{provider}'")
 

@@ -72,7 +72,7 @@ async def get_unmatched_jobs(
     async with SessionLocal() as session:
         stmt = (
             select(Job)
-            .where(Job.pipeline_ran == False)  # noqa: E712
+            .where(Job.pipeline_ran == False)
             .order_by(Job.created_at.asc())
         )
         if for_date:

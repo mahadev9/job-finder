@@ -57,6 +57,9 @@ async def create_llm_agent(
         tools.append({"google_search": {}})
         tools.append({"url_context": {}})
 
+    if provider == "qwen":
+        tools.append({"type": "web_search"})
+
     logger.info(f"Initializing LLM agent | model: {model_str}")
     return create_agent(
         model=settings.get_llm_client(model_str),

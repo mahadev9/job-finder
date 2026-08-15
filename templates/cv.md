@@ -8,7 +8,7 @@
 
 ## Professional Summary
 
-AI Engineer with 4+ years building and deploying production AI systems, specializing in Generative AI, Large Language Models (LLMs),
+AI Engineer with 5+ years building and deploying production AI systems, specializing in Generative AI, Large Language Models (LLMs),
 Retrieval-Augmented Generation (RAG), and AI agents on AWS. Shipped an enterprise document-intelligence platform on AWS Bedrock
 (Claude) with a serverless, event-driven architecture achieving 92% extraction confidence and 99.8% availability at 300+ concurrent requests. Skilled in Python, LangChain/LangGraph, vector databases, LLM fine-tuning (QLoRA), and MLOps.
 
