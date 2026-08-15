@@ -46,6 +46,7 @@ class Settings(BaseSettings):
             "qwen:qwen3.8-max",
             "qwen:deepseek-v4-flash",
             "qwen:qwen3.7-plus",
+            "qwen:qwen3.7-flash",
         ],
         description="Models shown in the UI selector (comma-separated). Defaults to LLM_MODEL only.",
     )
