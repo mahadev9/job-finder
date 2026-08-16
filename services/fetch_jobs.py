@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 import aiofiles
 import yaml

@@ -8,7 +8,11 @@ from core.config import settings
 from database.models.jobs import Job
 from services.llm_agent import invoke_agent
 from services.prompt_config import build_match_system_prompt
-from services.queries import get_recent_matched_jobs, get_unmatched_jobs, mark_jobs_matched
+from services.queries import (
+    get_recent_matched_jobs,
+    get_unmatched_jobs,
+    mark_jobs_matched,
+)
 
 logger = logging.getLogger("job-finder")
 

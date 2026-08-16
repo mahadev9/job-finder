@@ -1,6 +1,7 @@
 import logging
 from uuid import uuid4
 
+from deepagents import create_deep_agent
 from langchain.agents import create_agent
 from langchain.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
@@ -61,10 +62,21 @@ async def create_llm_agent(
         tools.append({"type": "web_search"})
 
     logger.info(f"Initializing LLM agent | model: {model_str}")
-    return create_agent(
+
+    # Creating reactive agent (old way)
+    # return create_agent(
+    #     model=settings.get_llm_client(model_str),
+    #     tools=tools,
+    #     name="Job Finder Agent",
+    #     system_prompt=system_prompt,
+    #     checkpointer=checkpointer,
+    # )
+
+    # Creating deep agent (new way)
+    return create_deep_agent(
+        name="Job Finder Agent",
         model=settings.get_llm_client(model_str),
         tools=tools,
-        name="Job Finder Agent",
         system_prompt=system_prompt,
         checkpointer=checkpointer,
     )
