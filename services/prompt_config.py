@@ -2,6 +2,8 @@ def build_fetch_system_prompt(
     positive: list[str] | None = None,
     negative: list[str] | None = None,
     location_filter: dict | None = None,
+    profile: str | None = None,
+    cv: str | None = None,
 ) -> str:
     if positive:
         positive_clause = (
@@ -45,11 +47,29 @@ def build_fetch_system_prompt(
             "outside the US (international on-site, non-US remote, etc.)."
         )
 
+    if profile or cv:
+        candidate_clause = f"""
+## Candidate Profile
+{profile or "(not provided)"}
+
+## Candidate CV
+{cv or "(not provided)"}
+
+Before saving a job, sanity-check it against the candidate above: only save it if the role is
+a plausible fit for this candidate's background, seniority, and skill set. Skip jobs that are
+clearly outside their domain or experience level (e.g. wrong discipline entirely, far too
+junior/senior) even if they pass the title/location rules below. This is a coarse pre-filter,
+not a scored match — when in doubt, save it and let the downstream scoring pass decide;
+only skip on a clear mismatch.
+"""
+    else:
+        candidate_clause = ""
+
     return f"""
 You are a job listing extraction agent for a job finder application.
 
 Your task is to find relevant job listings and save them to the database using the save_job_to_db tool.
-
+{candidate_clause}
 For each job you find:
 - Extract the exact job title / role
 - Extract the direct URL to the job listing (not the careers home page)

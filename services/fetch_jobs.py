@@ -6,6 +6,7 @@ import aiofiles
 import yaml
 
 from core.config import settings
+from services.candidate import load_profile_cv
 from services.llm_agent import invoke_agent
 from services.prompt_config import build_fetch_system_prompt
 
@@ -26,10 +27,13 @@ async def _fetch_system_prompt() -> str:
     config = await _load_config()
     tf = config.get("title_filter", {})
     lf = config.get("location_filter")
+    profile, cv = await load_profile_cv()
     return build_fetch_system_prompt(
         positive=tf.get("positive"),
         negative=tf.get("negative"),
         location_filter=lf,
+        profile=profile,
+        cv=cv,
     )
 
 
