@@ -64,22 +64,22 @@ async def create_llm_agent(
     logger.info(f"Initializing LLM agent | model: {model_str}")
 
     # Creating reactive agent (old way)
-    # return create_agent(
-    #     model=settings.get_llm_client(model_str),
-    #     tools=tools,
-    #     name="Job Finder Agent",
-    #     system_prompt=system_prompt,
-    #     checkpointer=checkpointer,
-    # )
-
-    # Creating deep agent (new way)
-    return create_deep_agent(
-        name="Job Finder Agent",
+    return create_agent(
         model=settings.get_llm_client(model_str),
         tools=tools,
+        name="Job Finder Agent",
         system_prompt=system_prompt,
         checkpointer=checkpointer,
     )
+
+    # Creating deep agent (new way)
+    # return create_deep_agent(
+    #     name="Job Finder Agent",
+    #     model=settings.get_llm_client(model_str),
+    #     tools=tools,
+    #     system_prompt=system_prompt,
+    #     checkpointer=checkpointer,
+    # )
 
 
 async def invoke_agent(
