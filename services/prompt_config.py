@@ -82,8 +82,17 @@ For each job you find:
 
 {location_clause}
 
-If a page requires navigation, follow links to individual job listings to get the direct URL.
-Stop after saving all relevant jobs from the given source.
+## Extraction guidelines
+- Only extract individual job postings — never save a careers homepage, a category/listing
+  page, or a search-results page as if it were a job.
+- If the source is a listing page, open each candidate posting to confirm its title, location,
+  and the canonical job URL before saving.
+- Skip postings explicitly marked closed, filled, expired, or "no longer accepting applications".
+- Don't save the same job twice — dedupe by (company, title, URL) within this run.
+- If the page paginates or lazy-loads more results ("Load more", numbered pages, infinite
+  scroll), keep going through all pages — do not stop after the first page or first screen.
+- Process the entire source before finishing. A handful of early matches is not a reason to
+  stop — keep scanning until the source is exhausted.
 """
 
 
@@ -138,11 +147,31 @@ credit for adjacent skills and partial matches.
 - MLOps Engineer, AI Infrastructure Engineer, AI Platform Engineer → 3.0-3.5
 - Forward Deployed Engineer, Solutions Engineer (technical, AI-facing) → 3.0-3.5
 - AI Solutions Architect, Staff Engineer (AI focus) → 3.0-3.5
+- Backend Engineer, Platform Engineer, Infrastructure Engineer, Cloud Engineer (Python-heavy, distributed systems, cloud infra) → 2.5-3.5 (primary target, no AI/ML requirement)
 - Full-Stack Engineer or Software Engineer with clear AI/LLM component → 2.0-2.8
 - Data Engineer with ML/AI pipeline component (e.g. Kafka + model serving, feature pipelines) → 2.0-2.8
-- Backend or Platform Engineer (Python-heavy, distributed systems, cloud infra) → 1.5-2.2
 - Generic Software Engineer, no AI or data focus → 1.0-1.8
 - Product Manager, Data Analyst, DevOps (non-AI), Recruiter → 0.0 (always skip)
+
+### Site Reliability Engineer (special case — gated, not a blanket primary target)
+Candidate's SRE-relevant proof points are specifically **managing cloud infrastructure**:
+EKS with horizontal pod autoscaling and load balancing (99.8% uptime, 300+ concurrent
+users), Ray clusters on EKS, Kubernetes, CI/CD pipelines, AWS cost optimization
+(60% GPU spend cut). SRE only scores as a primary target when the JD reflects that same
+shape of work — otherwise treat it as a weak, adjacent match.
+
+- JD explicitly involves managing Kubernetes/EKS (or equivalent, e.g. GKE/AKS) and/or major
+  cloud provider infra (AWS/GCP/Azure) — autoscaling, uptime/reliability at scale, cost
+  optimization, CI/CD for cloud services → 2.5-3.5 (true fit, same shape as candidate's
+  EKS/HPA/Ray production ownership)
+- JD is generic SRE / "keep the lights on" with no explicit cloud-infra or Kubernetes
+  ownership signal (e.g. on-call/incident response only, monitoring/alerting only,
+  networking/hardware/on-prem ops, DBA-flavored reliability work) → 0.8-1.4 (weak,
+  adjacent at best — do not treat as a primary target)
+
+If a title plausibly fits more than one row above (e.g. "Senior Backend Engineer, AI
+Platform"), score it using whichever row is best supported by the JD — never average
+across rows.
 
 ### Tech stack (0-3)
 - LangGraph, LangChain, LLM fine-tuning, RAG, agents, embeddings, AWS Bedrock → 2.4-3.0
@@ -279,6 +308,53 @@ Job: AI Engineer at TechCo Berlin | LangChain, RAG, Germany (on-site)
 save_matched_job(company="TechCo Berlin", role="AI Engineer", score=8.3,
   role_link="<url>", reason="Strong archetype and stack fit, but Non-US location (Germany).
   Status overridden to low_match per location policy.",
+  status="low_match")
+
+**Example I — Backend/Platform primary target (score: 7.4)**
+Job: Senior Platform Engineer at InfraCo | Kubernetes, AWS EKS, Go/Python, distributed
+systems, US remote — no AI/ML requirement
+- Role alignment: 3.0 (Platform Engineer is a primary target archetype, not just an
+  AI-adjacent fallback — scored near the top of its 2.5-3.5 band on a strong JD match)
+- Tech stack: 1.6 (AWS EKS + Kubernetes + distributed systems mirrors Fulcrum Digital infra
+  work directly; no AI/ML signal caps it below the LangChain/RAG tier)
+- Seniority: 1.8 (Senior IC at an infra-focused startup)
+- Location: 1.0 (US remote)
+- Total: 7.4 → save with status="pending"
+save_matched_job(company="InfraCo", role="Senior Platform Engineer", score=7.4,
+  role_link="<url>", reason="Backend/platform roles are a primary target now, not just an
+  AI-adjacent fallback. Kubernetes/EKS/distributed-systems stack matches Fulcrum Digital infra
+  work directly even without an AI component. Senior IC at infra startup and US remote both
+  fit cleanly.",
+  status="pending")
+
+**Example J — SRE, true fit (score: 7.2)**
+Job: Senior Site Reliability Engineer at CloudCo | own EKS clusters, autoscaling, on-call for
+Kubernetes-based services, AWS cost optimization, US remote
+- Role alignment: 3.0 (JD explicitly centers on managing EKS/Kubernetes and cloud cost —
+  the same shape of work as candidate's EKS/HPA/Ray ownership at Fulcrum Digital)
+- Tech stack: 1.5 (EKS + Kubernetes + AWS cost optimization maps directly)
+- Seniority: 1.7 (Senior IC, startup)
+- Location: 1.0 (US remote)
+- Total: 7.2 → save with status="pending"
+save_matched_job(company="CloudCo", role="Senior Site Reliability Engineer", score=7.2,
+  role_link="<url>", reason="SRE role is explicitly about owning EKS/Kubernetes clusters and
+  cloud cost optimization — near-identical to candidate's EKS/HPA/Ray production ownership at
+  Fulcrum Digital, so scored as a true fit rather than a generic SRE fallback.",
+  status="pending")
+
+**Example K — SRE, generic (weak fit, score: 4.6)**
+Job: Site Reliability Engineer at LegacyCo | on-call rotation, incident response, monitoring
+dashboards, on-prem data center, no cloud or Kubernetes mentioned, US remote
+- Role alignment: 1.2 (no cloud-infra or Kubernetes ownership signal in the JD — generic
+  on-call/incident-response SRE, treated as weak/adjacent per the SRE gating rule)
+- Tech stack: 0.7 (on-prem monitoring/alerting — little overlap with candidate's AWS/EKS stack)
+- Seniority: 1.7 (Senior IC)
+- Location: 1.0 (US remote)
+- Total: 4.6 → score < 5.0 → save with status="low_match"
+save_matched_job(company="LegacyCo", role="Site Reliability Engineer", score=4.6,
+  role_link="<url>", reason="Generic on-call/incident-response SRE with no cloud or Kubernetes
+  ownership in the JD — doesn't match the EKS/cloud-infra shape of candidate's SRE-relevant
+  experience, so scored as a weak/adjacent fit per the SRE gating rule.",
   status="low_match")
 
 {_build_calibration_section(recent_matches)}

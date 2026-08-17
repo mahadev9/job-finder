@@ -82,6 +82,10 @@ title_filter:
     # -- Engineering & deployment roles --
     - "Backend Engineer"
     - "Platform Engineer"
+    - "Infrastructure Engineer"
+    - "Cloud Engineer"
+    - "Site Reliability Engineer"
+    - "SRE"
     - "Solutions Engineer"
     - "Forward Deployed"
     - "Automation Engineer"
@@ -223,6 +227,10 @@ search_queries:
     query: 'site:jobs.ashbyhq.com "Backend Engineer"'
     enabled: true
 
+  - name: Ashby — Platform/Infra/SRE
+    query: 'site:jobs.ashbyhq.com "Platform Engineer" OR "Infrastructure Engineer" OR "Site Reliability Engineer" OR "SRE"'
+    enabled: true
+
   # -- Greenhouse --
   - name: Greenhouse — SA & FDE
     query: 'site:boards.greenhouse.io OR site:job-boards.greenhouse.io "Solutions Architect" OR "Forward Deployed" AI remote'
@@ -240,6 +248,10 @@ search_queries:
     query: 'site:boards.greenhouse.io OR site:job-boards.greenhouse.io "Backend Engineer"'
     enabled: true
 
+  - name: Greenhouse — Platform/Infra/SRE
+    query: 'site:boards.greenhouse.io OR site:job-boards.greenhouse.io "Platform Engineer" OR "Infrastructure Engineer" OR "Site Reliability Engineer" OR "SRE"'
+    enabled: true
+
   # -- Workable --
   - name: Workable — AI Roles
     query: 'site:apply.workable.com "AI Engineer" OR "ML Engineer" OR "Solutions Architect" OR "LLM" remote'
@@ -251,6 +263,10 @@ search_queries:
 
   - name: Workable — Backend Engineer
     query: 'site:apply.workable.com "Backend Engineer"'
+    enabled: true
+
+  - name: Workable — Platform/Infra/SRE
+    query: 'site:apply.workable.com "Platform Engineer" OR "Infrastructure Engineer" OR "Site Reliability Engineer"'
     enabled: true
 
   # -- Workday --
@@ -278,6 +294,10 @@ search_queries:
     query: 'site:myworkdayjobs.com "MLOps" OR "ML Platform" OR "AI Infrastructure" OR "AI Platform Engineer"'
     enabled: true
 
+  - name: Workday — Platform/Infra/SRE
+    query: 'site:myworkdayjobs.com "Platform Engineer" OR "Infrastructure Engineer" OR "Site Reliability Engineer" OR "Cloud Engineer"'
+    enabled: true
+
   # -- FDE specific (cross-portal) --
   - name: FDE & Deployed Engineer — All portals
     query: '"Forward Deployed Engineer" OR "Deployed Engineer" OR "Deployment Engineer" AI site:job-boards.greenhouse.io OR site:jobs.ashbyhq.com OR site:jobs.lever.co'
@@ -301,6 +321,10 @@ search_queries:
     query: 'site:jobs.lever.co "Backend Engineer"'
     enabled: true
 
+  - name: Lever — Platform/Infra/SRE
+    query: 'site:jobs.lever.co "Platform Engineer" OR "Infrastructure Engineer" OR "Site Reliability Engineer"'
+    enabled: true
+
   # -- YC / Startup boards --
 
   - name: YC Jobs — AI Engineer/SA/FDE
@@ -313,6 +337,10 @@ search_queries:
 
   - name: YC Jobs — Backend Engineer
     query: 'site:ycombinator.com/jobs OR site:workatastartup.com "Backend Engineer"'
+    enabled: true
+
+  - name: YC Jobs — Platform/Infra/SRE
+    query: 'site:ycombinator.com/jobs OR site:workatastartup.com "Platform Engineer" OR "Infrastructure Engineer" OR "Site Reliability Engineer"'
     enabled: true
 
   # -- Aggregators --
@@ -694,4 +722,67 @@ tracked_companies:
     careers_url: https://job-boards.greenhouse.io/safariai
     api: https://boards-api.greenhouse.io/v1/boards/safariai/jobs
     notes: "Miami HQ. Computer vision AI for operations in the physical economy."
+    enabled: true
+
+  # -- Backend / Platform / Infra (primary target, no AI/ML requirement) --
+
+  - name: Confluent
+    careers_url: https://jobs.ashbyhq.com/confluent
+    notes: "Creator of Kafka. Streaming data platform — direct match to Optum/StreamCo-style Kafka pipeline experience."
+    enabled: true
+
+  - name: Redpanda Data
+    careers_url: https://www.redpanda.com/careers
+    scan_method: websearch
+    scan_query: 'site:job-boards.greenhouse.io/redpandadata OR "redpanda" "Engineer" remote'
+    notes: "Kafka-compatible streaming platform. Fully remote. Direct match to Kafka/streaming background. Greenhouse-hosted but org slug shifts — scanned via websearch."
+    enabled: true
+
+  - name: Airbyte
+    careers_url: https://airbyte.com/company/careers
+    scan_method: websearch
+    scan_query: 'site:job-boards.greenhouse.io/airbyte OR "airbyte" "Engineer" remote'
+    notes: "Open-source data movement / ELT platform. Python-heavy data pipeline roles. Greenhouse-hosted but org slug shifts — scanned via websearch."
+    enabled: true
+
+  - name: dbt Labs
+    careers_url: https://www.getdbt.com/careers
+    scan_method: websearch
+    scan_query: 'site:job-boards.greenhouse.io/dbtlabsinc OR "dbt Labs" "Engineer" remote'
+    notes: "Analytics engineering platform. Data pipeline / platform engineering roles. Greenhouse-hosted but org slug shifts — scanned via websearch."
+    enabled: true
+
+  - name: PagerDuty
+    careers_url: https://job-boards.greenhouse.io/pagerduty
+    api: https://boards-api.greenhouse.io/v1/boards/pagerduty/jobs
+    notes: "Incident response / ops platform. Heavy SRE and platform engineering hiring (Kubernetes, cloud-native infra)."
+    enabled: true
+
+  - name: Cloudflare
+    careers_url: https://job-boards.greenhouse.io/cloudflare
+    api: https://boards-api.greenhouse.io/v1/boards/cloudflare/jobs
+    notes: "Global edge network. Large-scale backend/platform engineering hiring."
+    enabled: true
+
+  - name: Vercel
+    careers_url: https://job-boards.greenhouse.io/vercel
+    api: https://boards-api.greenhouse.io/v1/boards/vercel/jobs
+    notes: "Frontend cloud platform. Backend infra roles, incl. AI-facing work on v0."
+    enabled: true
+
+  - name: Ramp
+    careers_url: https://jobs.ashbyhq.com/ramp
+    notes: "Fintech (corporate cards / spend management). Backend engineering roles on transaction infra."
+    enabled: true
+
+  - name: Linear
+    careers_url: https://jobs.ashbyhq.com/Linear
+    notes: "Issue tracking / project management tool. Small, high-bar backend/product engineering team."
+    enabled: true
+
+  - name: HashiCorp
+    careers_url: https://www.hashicorp.com/jobs/engineering
+    scan_method: websearch
+    scan_query: 'site:hashicorp.com/jobs "Platform" OR "Infrastructure" OR "Cloud" OR "Site Reliability"'
+    notes: "Infra tooling (Terraform, Vault, Consul, Nomad). Platform/cloud engineering roles."
     enabled: true
