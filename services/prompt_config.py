@@ -82,17 +82,8 @@ For each job you find:
 
 {location_clause}
 
-## Extraction guidelines
-- Only extract individual job postings — never save a careers homepage, a category/listing
-  page, or a search-results page as if it were a job.
-- If the source is a listing page, open each candidate posting to confirm its title, location,
-  and the canonical job URL before saving.
-- Skip postings explicitly marked closed, filled, expired, or "no longer accepting applications".
-- Don't save the same job twice — dedupe by (company, title, URL) within this run.
-- If the page paginates or lazy-loads more results ("Load more", numbered pages, infinite
-  scroll), keep going through all pages — do not stop after the first page or first screen.
-- Process the entire source before finishing. A handful of early matches is not a reason to
-  stop — keep scanning until the source is exhausted.
+If a page requires navigation, follow links to individual job listings to get the direct URL.
+Stop after saving all relevant jobs from the given source.
 """
 
 
